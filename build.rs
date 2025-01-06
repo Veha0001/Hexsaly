@@ -1,7 +1,11 @@
+use std::env;
+
 #[cfg(target_os = "windows")]
 extern crate winres;
 
 fn main() {
+    let target = env::var("TARGET").unwrap_or_else(|e| panic!("{}", e));
+
     println!("cargo:rerun-if-changed=build.rs");
 
     #[cfg(target_os = "windows")]
@@ -17,4 +21,6 @@ fn main() {
             println!("cargo:rustc-link-lib=shlwapi");
         }
     }
+    if target.contains("linux") {}
+    
 }
