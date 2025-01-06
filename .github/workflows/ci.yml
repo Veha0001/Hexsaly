@@ -44,7 +44,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: Binary Patch
+          name: Binary Patcher
           make_latest: true
-          tag_name: latest
+          tag_name: latest-nightly
           files: target/release/Patcher.exe
