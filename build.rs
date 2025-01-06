@@ -1,12 +1,7 @@
-use std::env;
-
 #[cfg(target_os = "windows")]
 extern crate winres;
 
 fn main() {
-    // let dest = PathBuf::from(&env::var("OUT_DIR").unwrap());
-    let target = env::var("TARGET").unwrap_or_else(|e| panic!("{}", e));
-
     println!("cargo:rerun-if-changed=build.rs");
 
     #[cfg(target_os = "windows")]
