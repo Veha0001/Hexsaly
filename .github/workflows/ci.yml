@@ -1,11 +1,12 @@
 name: CI
 
-on: push
+on: [ push , pull_request ]
+
 permissions:
   contents: write
 
 jobs:
-  build:
+  windows-build:
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -34,10 +35,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: BinaryPatch
-          path: target/release/patcher.exe
+          path: target/release/Patcher.exe
           if-no-files-found: error
           
       - name: Release
+        if: ${{ github.event_name == "push" }}
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -45,4 +47,4 @@ jobs:
           name: Binary Patch
           make_latest: true
           tag_name: latest
-          files: target/release/patcher.exe
+          files: target/release/Patcher.exe

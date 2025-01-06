@@ -13,10 +13,8 @@ fn main() {
     if target.contains("windows") {
         let mut res = winres::WindowsResource::new();
         res.set_icon("res/tsh.ico");
-        res.set("ProductName", "Binary Patcher");
         res.set("ProductVersion", env!("CARGO_PKG_VERSION"));
         res.set("FileVersion", env!("CARGO_PKG_VERSION"));
-        res.set("FileDescription", "A Rust application for patching binaries");
         res.compile().unwrap();
 
         if target.contains("i686") {
