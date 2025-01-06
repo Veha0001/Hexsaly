@@ -6,9 +6,9 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-		  - uses: actions/checkout@v4
-	
-		  - name: Restore cache
+		- name: Checkout
+			uses: actions/checkout@v4
+		- name: Restore cache
 			uses: actions/cache/restore@v4
 			with: 
 			  path: |
@@ -17,14 +17,14 @@ jobs:
 				target
 			  key: cargo-${{ hashFiles('**/Cargo.lock') }}
 			  
-		  - name: Setup Rust
+		- name: Setup Rust
 			run: |
 			  rustup toolchain default stable 
 			  rustup target add x86_64-pc-windows-msvc
 			  rustc -vV
 			  cargo -vV
 	
-		  - name: Build
+		- name: Build
 			run: |
 			  if [ "${{ github.ref_type }}" == "tag" ]; then
 				export DRS_BUILD_VERSION_OVERRIDE="${{ github.ref_name }}"
@@ -35,14 +35,14 @@ jobs:
 			  fi
 			  CARGO_INCREMENTAL=1 cargo build --release
 			  
-		  - name: Upload artifact
+		- name: Upload artifact
 			uses: actions/upload-artifact@v4
 			with:
 			  name: BinaryPatch
 			  path: target/release/patcher.exe
 			  if-no-files-found: error
 	
-		  - name: Save cache
+		- name: Save cache
 			uses: actions/cache/save@v4
 			with:
 			  path: |
