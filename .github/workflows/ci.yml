@@ -26,17 +26,7 @@ jobs:
           cargo -vV
 
       - name: Build
-        env:
-          VERSION: "1.0.0" # Replace with your default version
-        run: |
-          if [ "${{ github.ref_type }}" == "tag" ]; then
-            export DRS_BUILD_VERSION_OVERRIDE="${{ github.ref_name }}"
-          elif [ "${{ github.ref_name }}" == "master" ]; then
-            export DRS_BUILD_VERSION_OVERRIDE="${{ env.VERSION }}-$((${{ github.run_number }} + 654))"
-          else
-            export DRS_BUILD_VERSION_OVERRIDE="${{ env.VERSION }}-${GITHUB_SHA:0:7}"
-          fi
-          CARGO_INCREMENTAL=1 cargo build --release
+        run: cargo build --release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
