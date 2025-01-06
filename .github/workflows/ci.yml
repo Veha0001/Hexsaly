@@ -1,0 +1,52 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+		  - uses: actions/checkout@v4
+	
+		  - name: Restore cache
+				uses: actions/cache/restore@v4
+				with: 
+				  path: |
+					~/.cargo
+					~/.rustup
+					target
+				  key: ${{ matrix.target_name }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+					
+		  - name: Setup Rust
+				run: |
+				  rustup toolchain default stable 
+				  rustup target add x86_64-pc-windows-msvc
+				  rustc -vV
+				  cargo -vV
+	
+		  - name: Build
+				run: |
+				  if [ "${{ github.ref_type }}" == "tag" ]; then
+					export DRS_BUILD_VERSION_OVERRIDE="${{ github.ref_name }}"
+				  elif [ "${{ github.ref_name }}" == "master" ]; then
+					export DRS_BUILD_VERSION_OVERRIDE="${{ env.VERSION }}-$((${{ github.run_number }} + 654))"
+				  else
+					export DRS_BUILD_VERSION_OVERRIDE="${{ env.VERSION }}-${GITHUB_SHA:0:7}"
+				  fi
+				  CARGO_INCREMENTAL=1 cargo build --release
+					
+			- name: Upload artifact
+				uses: actions/upload-artifact@v4
+				with:
+					name: BinaryPatch
+					path: target/release/patcher.exe
+					if-no-files-found: error
+
+		  - name: Save cache
+				uses: actions/cache/save@v4
+				with:
+				  path: |
+					~/.cargo
+					~/.rustup
+					target
+				  key: ${{ matrix.target_name }}-cargo-${{ hashFiles('**/Cargo.lock') }}
