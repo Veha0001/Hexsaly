@@ -69,7 +69,7 @@ fn wildcard_pattern_scan(data: &[u8], pattern: &str, log_style: u8) -> Option<us
     None
 }
 
-fn find_offset_by_method_name(method_name: &str, dump_path: &str) -> Result<Option<usize>, io::Error> {
+fn find_offset_by_method_name(method_name: &str, dump_path: &str, log_style: u8) -> Result<Option<usize>, io::Error> {
     let file = File::open(dump_path)?;
     let reader = BufReader::new(file);
     let offset_regex = Regex::new(r"Offset:\s*0x([0-9A-Fa-f]+)").unwrap();
@@ -81,10 +81,18 @@ fn find_offset_by_method_name(method_name: &str, dump_path: &str) -> Result<Opti
         if line.contains(method_name) {
             if let Some(caps) = offset_regex.captures(&previous_line) {
                 let offset = usize::from_str_radix(&caps[1], 16).unwrap();
-                println!("{}", format!("Found {} at Offset: 0x{:X}", method_name, offset).green());
+                if log_style == 1 {
+                    println!("{}", format!("[FOUND] {}", method_name.blue()).green());
+                } else {
+                    println!("{}", format!("Found {} at Offset: 0x{:X}", method_name, offset).green());
+                }
                 return Ok(Some(offset));
             } else {
-                println!("{}", format!("Warning: No offset found for {}.", method_name).yellow());
+                if log_style == 1 {
+                    println!("{}", format!("[WARNING] No offset found for {}.", method_name.yellow()).red());
+                } else {
+                    println!("{}", format!("Warning: No offset found for {}.", method_name).yellow());
+                }
                 return Ok(None);
             }
         }
@@ -118,33 +126,63 @@ fn patch_code(input_filename: &str, output_filename: &str, patch_list: &Value, d
     for patch in patch_list.as_array().unwrap() {
         let offset = if let Some(method_name) = patch.get("method_name") {
             if let Some(dump_path) = dump_path {
-                if let Some(offset) = find_offset_by_method_name(method_name.as_str().unwrap(), dump_path)? {
+                if let Some(offset) = find_offset_by_method_name(method_name.as_str().unwrap(), dump_path, log_style)? {
                     offset
                 } else {
-                    println!("{}", format!("Warning: Method '{}' not found. Skipping patch.", method_name.as_str().unwrap()).yellow());
+                    if log_style == 1 {
+                        println!("{}", format!("[WARNING] Method '{}' not found. Skipping patch.", method_name.as_str().unwrap()).yellow().red());
+                    } else {
+                        println!("{}", format!("Warning: Method '{}' not found. Skipping patch.", method_name.as_str().unwrap()).yellow());
+                    }
                     continue;
                 }
             } else {
-                println!("{}", "Warning: dump_path is required for method_name patches. Skipping patch.".yellow());
+                if log_style == 1 {
+                    println!("{}", "Warning: dump_path is required for method_name patches. Skipping patch.".yellow().red());
+                } else {
+                    println!("{}", "Warning: dump_path is required for method_name patches. Skipping patch.".yellow());
+                }
                 continue;
             }
-        } else if let Some(offset_str) = patch.get("offset") {
-            usize::from_str_radix(offset_str.as_str().unwrap(), 16).unwrap()
+        } else if let Some(offset_str) = patch.get("offset").and_then(|v| v.as_str()) {
+            match usize::from_str_radix(offset_str.trim_start_matches("0x"), 16) {
+                Ok(offset) => offset,
+                Err(e) => {
+                    if log_style == 1 {
+                        println!("{}", format!("[ERROR] Parsing offset '{}': {}", offset_str, e).red());
+                    } else {
+                        println!("{}", format!("Error parsing offset '{}': {}", offset_str, e).red());
+                    }
+                    continue;
+                }
+            }
         } else if let Some(wildcard) = patch.get("wildcard") {
             if let Some(offset) = wildcard_pattern_scan(&data, wildcard.as_str().unwrap(), log_style) {
                 offset
             } else {
-                println!("{}", format!("Warning: Wildcard pattern '{}' not found. Skipping patch.", wildcard.as_str().unwrap()).yellow());
+                if log_style == 1 {
+                    println!("{}", format!("[WARNING] Wildcard pattern '{}' not found. Skipping patch.", wildcard.as_str().unwrap()).yellow().red());
+                } else {
+                    println!("{}", format!("Warning: Wildcard pattern '{}' not found. Skipping patch.", wildcard.as_str().unwrap()).yellow());
+                }
                 continue;
             }
         } else {
-            println!("{}", "Warning: Patch does not contain a valid method_name, offset, or wildcard. Skipping patch.".yellow());
+            if log_style == 1 {
+                println!("{}", "[WARNING] Patch does not contain a valid method_name, offset, or wildcard. Skipping patch.".yellow().red());
+            } else {
+                println!("{}", "Warning: Patch does not contain a valid method_name, offset, or wildcard. Skipping patch.".yellow());
+            }
             continue;
         };
 
         // Apply the patch at the calculated offset
         if let Err(e) = apply_patch(&mut data, offset, patch, log_style) {
-            println!("{}", format!("Error applying patch: {}", e).red());
+            if log_style == 1 {
+                println!("{}", format!("[ERROR] Applying patch: {}", e).red());
+            } else {
+                println!("{}", format!("Error applying patch: {}", e).red());
+            }
         }
     }
 
