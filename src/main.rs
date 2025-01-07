@@ -3,6 +3,7 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 use serde_json::Value;
 use regex::Regex;
 use colored::*;
+use std::path::Path;
 
 #[cfg(windows)]
 mod windows_console {
@@ -137,7 +138,14 @@ fn apply_patch(data: &mut Vec<u8>, offset: usize, patch: &Value, log_style: u8) 
 }
 
 fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&str>, log_style: u8) -> Result<(), io::Error> {
-    let mut input_file = File::open(input)?;
+    let input_path = Path::new(input);
+    let output_path = Path::new(output);
+
+    if !input_path.exists() {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "Input file not found"));
+    }
+
+    let mut input_file = File::open(input_path)?;
     let mut data = Vec::new();
     input_file.read_to_end(&mut data)?;
 
@@ -204,7 +212,7 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
         }
     }
 
-    let mut output_file = File::create(output)?;
+    let mut output_file = File::create(output_path)?;
     output_file.write_all(&data)?;
 
     if log_style == 1 {
