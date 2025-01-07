@@ -11,7 +11,7 @@ fn main() {
     #[cfg(target_os = "windows")]
     if target.contains("windows") {
         let mut res = winres::WindowsResource::new();
-        res.set_icon("res/tsh.ico");
+        res.set_icon("assets/tsh.ico");
         res.set("ProductVersion", env!("CARGO_PKG_VERSION"));
         res.set("FileVersion", env!("CARGO_PKG_VERSION"));
         res.compile().unwrap();

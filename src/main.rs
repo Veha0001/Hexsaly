@@ -25,17 +25,7 @@ mod windows_console {
     }
 }
 
-fn goodbye() {
-    #[cfg(windows)]
-    {
-        use std::io::{self, Write};
-        print!("Press Enter to continue...");
-        io::stdout().flush().unwrap();
-        io::stdin().read_line(&mut String::new()).unwrap();
-    }
-}
-
-fn replace_hex_at_offset(data: &mut Vec<u8>, offset: usize, repl: &str) -> Result<(), String> {
+fn replace_hex_at_offset(data: &mut Vec<u8>, offset: usize, repl: &str, log_style: u8) -> Result<(), String> {
     let bytes: Vec<u8> = repl.split_whitespace()
         .map(|s| u8::from_str_radix(s, 16).map_err(|e| e.to_string()))
         .collect::<Result<_, _>>()?;
@@ -45,6 +35,29 @@ fn replace_hex_at_offset(data: &mut Vec<u8>, offset: usize, repl: &str) -> Resul
     }
 
     data[offset..offset + bytes.len()].copy_from_slice(&bytes);
+    if log_style == 1 {
+        println!("{}", format!("[OFFSET] At: 0x{:X}", offset).cyan());
+    } else {
+        println!("{}", format!("Patching at Offset: 0x{:X}", offset).cyan());
+    }
+    Ok(())
+}
+
+fn insert_hex_at_offset(data: &mut Vec<u8>, offset: usize, repl: &str, log_style: u8) -> Result<(), String> {
+    let bytes: Vec<u8> = repl.split_whitespace()
+        .map(|s| u8::from_str_radix(s, 16).map_err(|e| e.to_string()))
+        .collect::<Result<_, _>>()?;
+
+    if offset > data.len() {
+        return Err("Insertion exceeds data size".into());
+    }
+
+    data.splice(offset..offset, bytes.iter().cloned());
+    if log_style == 1 {
+        println!("{}", format!("[OFFSET] At: 0x{:X}", offset).cyan());
+    } else {
+        println!("{}", format!("Inserting at Offset: 0x{:X}", offset).cyan());
+    }
     Ok(())
 }
 
@@ -82,7 +95,7 @@ fn find_offset_by_method_name(method_name: &str, dump_path: &str, log_style: u8)
             if let Some(caps) = offset_regex.captures(&previous_line) {
                 let offset = usize::from_str_radix(&caps[1], 16).unwrap();
                 if log_style == 1 {
-                    println!("{}", format!("[FOUND] {}", method_name.blue()).green());
+                    println!("{}", format!("[FOUND] Method name: {}", method_name.blue()).green());
                 } else {
                     println!("{}", format!("Found {} at Offset: 0x{:X}", method_name, offset).green());
                 }
@@ -106,20 +119,25 @@ fn apply_patch(data: &mut Vec<u8>, offset: usize, patch: &Value, log_style: u8) 
         return Err(format!("Error: Offset 0x{:X} is out of range for the input file.", offset).red().to_string());
     }
 
-    if log_style == 1 {
-        println!("{}", format!("[OFFSET] At: 0x{:X}", offset).cyan());
+    if let Some(hex_replace) = patch.get("hex_replace") {
+        replace_hex_at_offset(data, offset, hex_replace.as_str().unwrap(), log_style)?;
+        if log_style == 1 {
+            println!("{}", format!("[PATCH] Replaced with: {}", hex_replace.as_str().unwrap()).purple());
+        }
+    } else if let Some(hex_insert) = patch.get("hex_insert") {
+        insert_hex_at_offset(data, offset, hex_insert.as_str().unwrap(), log_style)?;
+        if log_style == 1 {
+            println!("{}", format!("[PATCH] Inserted: {}", hex_insert.as_str().unwrap()).purple());
+        }
     } else {
-        println!("{}", format!("Patching at Offset: 0x{:X}", offset).cyan());
+        return Err("Patch must contain either 'hex_replace' or 'hex_insert'.".into());
     }
-    replace_hex_at_offset(data, offset, patch.get("hex_code").unwrap().as_str().unwrap())?;
-    if log_style == 1 {
-        println!("{}", format!("[PATCH] Replaced with: {}", patch.get("hex_code").unwrap().as_str().unwrap()).purple());
-    }
+
     Ok(())
 }
 
-fn patch_code(input_filename: &str, output_filename: &str, patch_list: &Value, dump_path: Option<&str>, log_style: u8) -> Result<(), io::Error> {
-    let mut input_file = File::open(input_filename)?;
+fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&str>, log_style: u8) -> Result<(), io::Error> {
+    let mut input_file = File::open(input)?;
     let mut data = Vec::new();
     input_file.read_to_end(&mut data)?;
 
@@ -186,13 +204,13 @@ fn patch_code(input_filename: &str, output_filename: &str, patch_list: &Value, d
         }
     }
 
-    let mut output_file = File::create(output_filename)?;
+    let mut output_file = File::create(output)?;
     output_file.write_all(&data)?;
 
     if log_style == 1 {
-        println!("{}", format!("[DONE] Patched file saved as: '{}'.", output_filename).green());
+        println!("{}", format!("[DONE] Patched file saved as: '{}'.", output).green());
     } else {
-        println!("{}", format!("Patched to: '{}'.", output_filename).green());
+        println!("{}", format!("Patched to: '{}'.", output).green());
     }
     Ok(())
 }
@@ -206,15 +224,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reader = BufReader::new(file);
     let config: Value = serde_json::from_reader(reader)?;
 
-    let input_filename = config["Binary"]["input_file"].as_str().ok_or("Missing input_file in config")?;
-    let output_filename = config["Binary"]["output_file"].as_str().ok_or("Missing output_file in config")?;
-    let patch_list = &config["Binary"]["patches"];
-    let dump_path = config["Binary"].get("dump_path").and_then(|v| v.as_str());
-    let log_style = config["Binary"]["log_style"].as_u64().unwrap_or(0) as u8;
-    if let Err(e) = patch_code(input_filename, output_filename, patch_list, dump_path, log_style) {
-        eprintln!("{}", format!("Error: {}", e).red());
+    let files = config["BinaryPatch"]["files"].as_array().ok_or("Missing files in config")?;
+    let log_style = config["BinaryPatch"]["log_style"].as_u64().unwrap_or(0) as u8;
+
+    for file_config in files {
+        let input = file_config["input"].as_str().ok_or("Missing input in config")?;
+        let output = file_config["output"].as_str().ok_or("Missing output in config")?;
+        let patch_list = &file_config["patches"];
+        let dump_cs = file_config["dump_cs"].as_str();
+        let require = file_config["require"].as_bool().unwrap_or(false);
+
+        if let Err(e) = patch_code(input, output, patch_list, dump_cs, log_style) {
+            eprintln!("{}", format!("Error: {}", e).red());
+            if require {
+            return Err(Box::new(e));
+            }
+        }
     }
 
-    goodbye();
+    #[cfg(windows)]
+    {
+        // Prevent the console from closing too quickly
+        println!("Press Enter to exit...");
+        io::stdin().read_line(&mut String::new()).unwrap();
+    }
     Ok(())
 }

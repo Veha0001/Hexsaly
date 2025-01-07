@@ -1,19 +1,19 @@
 [package]
 name = "Patcher"
-version = "0.1.0"
+version = "0.1.5"
 edition = "2021"
 
 [package.metadata.bundle]
 name = "Patcher"
-identifier = ""
-version = "0.101.0"
+identifier = "io.github.veha0001.BinaryPatcher"
+version = "0.1.5"
 copyright = "Copyright (c) 2025 Veha Veha"
 category = "Program"
 osx_minimum_system_version = "10.12"
 
 [package.metadata.winres]
 OriginalFilename = "Patcher.exe"
-LegalCopyright = "Copyright © 2025"
+LegalCopyright = "Copyright © 2025, @Veha0001"
 ProductName  = "Binary Patcher"
 FileDescription = "A Rust application for patching binaries using config.json"
 
