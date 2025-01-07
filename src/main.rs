@@ -1,8 +1,9 @@
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use serde_json::Value;
 use regex::Regex;
 use colored::*;
+use std::path::Path;
 
 #[cfg(windows)]
 mod windows_console {
@@ -204,13 +205,24 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
         }
     }
 
-    let mut output_file = File::create(output)?;
+    let output_path = Path::new(output);
+    let mut final_output = output.to_string();
+
+    if output_path.exists() {
+        final_output.push_str(".bin");
+    }
+
+    let mut output_file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&final_output)?;
+
     output_file.write_all(&data)?;
 
     if log_style == 1 {
-        println!("{}", format!("[DONE] Patched file saved as: '{}'.", output).green());
+        println!("{}", format!("[DONE] Patched file saved as: '{}'.", final_output).green());
     } else {
-        println!("{}", format!("Patched to: '{}'.", output).green());
+        println!("{}", format!("Patched to: '{}'.", final_output).green());
     }
     Ok(())
 }
@@ -237,7 +249,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Err(e) = patch_code(input, output, patch_list, dump_cs, log_style) {
             eprintln!("{}", format!("Error: {}", e).red());
             if require {
-            return Err(Box::new(e));
+                return Err(Box::new(e));
             }
         }
     }
