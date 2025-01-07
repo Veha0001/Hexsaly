@@ -1,10 +1,9 @@
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, Read, Write};
+use std::io::{self, BufRead, BufReader, Read};
 use serde_json::Value;
 use regex::Regex;
 use colored::*;
 use std::path::Path;
-use std::fs::OpenOptions;
 
 #[cfg(windows)]
 mod windows_console {
@@ -138,15 +137,14 @@ fn apply_patch(data: &mut Vec<u8>, offset: usize, patch: &Value, log_style: u8) 
     Ok(())
 }
 
-fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&str>, log_style: u8) -> Result<(), io::Error> {
+fn patch_code(input: &str, patch_list: &Value, dump_path: Option<&str>, log_style: u8) -> Result<(), io::Error> {
     let input_path = Path::new(input);
-    let output_path = Path::new(output);
 
     if !input_path.exists() {
         return Err(io::Error::new(io::ErrorKind::NotFound, "Input file not found"));
     }
 
-    let mut input_file = OpenOptions::new().read(true).open(input_path)?;
+    let mut input_file = File::open(input_path)?;
     let mut data = Vec::new();
     input_file.read_to_end(&mut data)?;
 
@@ -213,13 +211,14 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
         }
     }
 
-    let mut output_file = OpenOptions::new().write(true).create(true).truncate(true).open(output_path)?;
-    output_file.write_all(&data)?;
+    // Comment out the code that writes to the output file
+    // let mut output_file = OpenOptions::new().write(true).create(true).truncate(true).open(output_path)?;
+    // output_file.write_all(&data)?;
 
     if log_style == 1 {
-        println!("{}", format!("[DONE] Patched file saved as: '{}'.", output).green());
+        println!("{}", format!("[DONE] Patching simulation completed for: '{}'.", input).green());
     } else {
-        println!("{}", format!("Patched to: '{}'.", output).green());
+        println!("{}", format!("Patching simulation completed for: '{}'.", input).green());
     }
     Ok(())
 }
@@ -238,15 +237,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for file_config in files {
         let input = file_config["input"].as_str().ok_or("Missing input in config")?;
-        let output = file_config["output"].as_str().ok_or("Missing output in config")?;
         let patch_list = &file_config["patches"];
         let dump_cs = file_config["dump_cs"].as_str();
         let require = file_config["require"].as_bool().unwrap_or(false);
 
-        if let Err(e) = patch_code(input, output, patch_list, dump_cs, log_style) {
+        if let Err(e) = patch_code(input, patch_list, dump_cs, log_style) {
             eprintln!("{}", format!("Error: {}", e).red());
             if require {
-            return Err(Box::new(e));
+                return Err(Box::new(e));
             }
         }
     }
