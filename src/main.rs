@@ -4,6 +4,7 @@ use serde_json::Value;
 use regex::Regex;
 use colored::*;
 use std::path::Path;
+use std::fs::OpenOptions;
 
 #[cfg(windows)]
 mod windows_console {
@@ -145,7 +146,7 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
         return Err(io::Error::new(io::ErrorKind::NotFound, "Input file not found"));
     }
 
-    let mut input_file = File::open(input_path)?;
+    let mut input_file = OpenOptions::new().read(true).open(input_path)?;
     let mut data = Vec::new();
     input_file.read_to_end(&mut data)?;
 
@@ -212,7 +213,7 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
         }
     }
 
-    let mut output_file = File::create(output_path)?;
+    let mut output_file = OpenOptions::new().write(true).create(true).truncate(true).open(output_path)?;
     output_file.write_all(&data)?;
 
     if log_style == 1 {
