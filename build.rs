@@ -15,11 +15,6 @@ fn main() {
         res.set("ProductVersion", env!("CARGO_PKG_VERSION"));
         res.set("FileVersion", env!("CARGO_PKG_VERSION"));
         res.compile().unwrap();
-
-        if target.contains("i686") {
-            println!("cargo:rustc-link-arg=/FORCE:MULTIPLE");
-            println!("cargo:rustc-link-lib=shlwapi");
-        }
     }
     if target.contains("linux") {}
     

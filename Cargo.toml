@@ -19,7 +19,7 @@ FileDescription = "A Rust application for patching binaries using config.json"
 
 
 [profile.release]
-lto = "off"
+lto = false
 panic = "abort"
 codegen-units = 1
 incremental = false
