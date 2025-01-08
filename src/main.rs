@@ -242,11 +242,28 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     windows_console::set_console_title("Binary Patcher");
 
-    let config_path = std::env::args().nth(1).unwrap_or_else(|| "config.json".to_string());
+    // Parse command-line arguments for custom config file
+    let args: Vec<String> = std::env::args().collect();
+    let config_path = if args.len() > 1 {
+        &args[1]
+    } else {
+        "config.json"
+    };
 
-    let file = File::open(&config_path)?;
+    // Validate and read the config file
+    let config_metadata = std::fs::metadata(config_path)?;
+    if config_metadata.len() > 10 * 1024 * 1024 {
+        return Err(Box::new(io::Error::new(io::ErrorKind::InvalidData, "Config file is too large")));
+    }
+
+    let file = File::open(config_path)?;
     let reader = BufReader::new(file);
     let config: Value = serde_json::from_reader(reader)?;
+
+    // Validate the JSON structure
+    if !config.is_object() || !config["BinaryPatch"].is_object() || !config["BinaryPatch"]["files"].is_array() {
+        return Err(Box::new(io::Error::new(io::ErrorKind::InvalidData, "Invalid config file structure")));
+    }
 
     let files = config["BinaryPatch"]["files"].as_array().ok_or("Missing files in config")?;
     let log_style = config["BinaryPatch"]["log_style"].as_u64().unwrap_or(0) as u8;
@@ -261,7 +278,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Err(e) = patch_code(input, output, patch_list, dump_cs, log_style) {
             eprintln!("{}", format!("Error: {}", e).red());
             if require {
-            return Err(Box::new(e));
+                return Err(Box::new(e));
             }
         }
     }
