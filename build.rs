@@ -17,9 +17,11 @@ fn main() {
         res.set("FileVersion", env!("CARGO_PKG_VERSION"));
         res.compile().unwrap();
     }
-    #[cfg(target_os = "linux")]
     if target.contains("linux") {
         println!("cargo:rustc-link-lib=dylib=ncurses");
+        return;
+    }
+    if target.contains("unknown") {
         return;
     }
 }

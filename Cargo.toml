@@ -2,6 +2,7 @@
 name = "Patcher"
 version = "0.1.5"
 edition = "2021"
+publish = false
 
 
 [package.metadata.bundle]
@@ -18,6 +19,9 @@ LegalCopyright = "Copyright © 2025"
 ProductName  = "Binary Patcher"
 FileDescription = "A Rust application for patching binaries using config.json"
 
+[profile.dev]
+lto = false
+incremental = false
 
 [profile.release]
 lto = false
