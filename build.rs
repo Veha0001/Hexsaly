@@ -10,10 +10,14 @@ fn main() {
 
     #[cfg(target_os = "windows")]
     if target.contains("windows") {
+        println!("cargo:rerun-if-changed=res/tsh.ico");
         let mut res = winres::WindowsResource::new();
         res.set_icon("res/tsh.ico");
         res.set("ProductVersion", env!("CARGO_PKG_VERSION"));
         res.set("FileVersion", env!("CARGO_PKG_VERSION"));
         res.compile().unwrap();
+    }
+    if target.contains("linux") {
+        println!("cargo:rustc-link-lib=dylib=ncurses");
     }
 }
