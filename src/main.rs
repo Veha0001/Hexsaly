@@ -1,9 +1,9 @@
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use serde_json::Value;
 use regex::Regex;
 use colored::*;
-use rfd::FileDialog;
+use std::os::unix::fs::PermissionsExt; // Add this for Unix-like systems
 
 #[cfg(windows)]
 mod windows_console {
@@ -138,6 +138,26 @@ fn apply_patch(data: &mut Vec<u8>, offset: usize, patch: &Value, log_style: u8) 
 }
 
 fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&str>, log_style: u8) -> Result<(), io::Error> {
+    // Check if input file exists and is readable
+    if !std::path::Path::new(input).exists() {
+        return Err(io::Error::new(io::ErrorKind::NotFound, format!("Input file '{}' does not exist", input)));
+    }
+    let input_metadata = std::fs::metadata(input)?;
+    if input_metadata.permissions().readonly() {
+        return Err(io::Error::new(io::ErrorKind::PermissionDenied, format!("Input file '{}' is not readable", input)));
+    }
+
+    // Check if output file is writable
+    if std::path::Path::new(output).exists() {
+        let output_metadata = std::fs::metadata(output)?;
+        if output_metadata.permissions().readonly() {
+            return Err(io::Error::new(io::ErrorKind::PermissionDenied, format!("Output file '{}' is not writable", output)));
+        }
+    } else {
+        // Try to create the output file to check if it's writable
+        let _ = OpenOptions::new().write(true).create(true).open(output)?;
+    }
+
     let mut input_file = File::open(input)?;
     let mut data = Vec::new();
     input_file.read_to_end(&mut data)?;
@@ -228,30 +248,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let files = config["BinaryPatch"]["files"].as_array().ok_or("Missing files in config")?;
     let log_style = config["BinaryPatch"]["log_style"].as_u64().unwrap_or(0) as u8;
 
-    // Open file dialog to select input files
-    let selected_files = FileDialog::new()
-        .set_directory(".")
-        .pick_files();
+    for file_config in files {
+        let input = file_config["input"].as_str().ok_or("Missing input in config")?;
+        let output = file_config["output"].as_str().ok_or("Missing output in config")?;
+        let patch_list = &file_config["patches"];
+        let dump_cs = file_config["dump_cs"].as_str();
+        let require = file_config["require"].as_bool().unwrap_or(false);
 
-    if let Some(selected_files) = selected_files {
-        for selected_file in selected_files {
-            let input_path = selected_file.to_str().unwrap();
-
-            for file_config in files {
-                let input = file_config["input"].as_str().ok_or("Missing input in config")?;
-                if input_path.ends_with(input) {
-                    let output = file_config["output"].as_str().ok_or("Missing output in config")?;
-                    let patch_list = &file_config["patches"];
-                    let dump_cs = file_config["dump_cs"].as_str();
-                    let require = file_config["require"].as_bool().unwrap_or(false);
-
-                    if let Err(e) = patch_code(input_path, output, patch_list, dump_cs, log_style) {
-                        eprintln!("{}", format!("Error: {}", e).red());
-                        if require {
-                            return Err(Box::new(e));
-                        }
-                    }
-                }
+        if let Err(e) = patch_code(input, output, patch_list, dump_cs, log_style) {
+            eprintln!("{}", format!("Error: {}", e).red());
+            if require {
+            return Err(Box::new(e));
             }
         }
     }
