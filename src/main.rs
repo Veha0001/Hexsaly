@@ -3,6 +3,7 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 use serde_json::Value;
 use regex::Regex;
 use colored::*;
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt; // Add this for Unix-like systems
 
 #[cfg(windows)]
@@ -158,7 +159,8 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
         let _ = OpenOptions::new().write(true).create(true).open(output)?;
     }
 
-    let mut input_file = File::open(input)?;
+    // Open input file with read permissions
+    let mut input_file = OpenOptions::new().read(true).open(input)?;
     let mut data = Vec::new();
     input_file.read_to_end(&mut data)?;
 
@@ -225,7 +227,8 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
         }
     }
 
-    let mut output_file = File::create(output)?;
+    // Open output file with write permissions
+    let mut output_file = OpenOptions::new().write(true).create(true).truncate(true).open(output)?;
     output_file.write_all(&data)?;
 
     if log_style == 1 {
