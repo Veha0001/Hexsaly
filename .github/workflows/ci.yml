@@ -24,7 +24,7 @@ jobs:
       - name: Setup Rust
         run: |
           rustup default stable
-          rustup target add x86_64-pc-windows-msvc
+          rustup target add x86_64-pc-windows-gnu
           rustc -vV
           cargo -vV
 

@@ -3,8 +3,6 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 use serde_json::Value;
 use regex::Regex;
 use colored::*;
-use std::fs::Permissions;
-use std::os::unix::fs::PermissionsExt; // For Unix-like systems
 
 #[cfg(windows)]
 mod windows_console {
@@ -208,13 +206,6 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
 
     let mut output_file = File::create(output)?;
     output_file.write_all(&data)?;
-
-    // Set file permissions to user-only
-    #[cfg(unix)]
-    {
-        let permissions = Permissions::from_mode(0o600); // Read and write for owner only
-        output_file.set_permissions(permissions)?;
-    }
 
     if log_style == 1 {
         println!("{}", format!("[DONE] Patched file saved as: '{}'.", output).green());
