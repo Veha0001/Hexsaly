@@ -16,6 +16,4 @@ fn main() {
         res.set("FileVersion", env!("CARGO_PKG_VERSION"));
         res.compile().unwrap();
     }
-    if target.contains("linux") {}
-    
 }
