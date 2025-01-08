@@ -3,6 +3,7 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 use serde_json::Value;
 use regex::Regex;
 use colored::*;
+use rfd::FileDialog;
 
 #[cfg(windows)]
 mod windows_console {
@@ -227,17 +228,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let files = config["BinaryPatch"]["files"].as_array().ok_or("Missing files in config")?;
     let log_style = config["BinaryPatch"]["log_style"].as_u64().unwrap_or(0) as u8;
 
-    for file_config in files {
-        let input = file_config["input"].as_str().ok_or("Missing input in config")?;
-        let output = file_config["output"].as_str().ok_or("Missing output in config")?;
-        let patch_list = &file_config["patches"];
-        let dump_cs = file_config["dump_cs"].as_str();
-        let require = file_config["require"].as_bool().unwrap_or(false);
+    // Open file dialog to select input files
+    let selected_files = FileDialog::new()
+        .set_directory(".")
+        .pick_files();
 
-        if let Err(e) = patch_code(input, output, patch_list, dump_cs, log_style) {
-            eprintln!("{}", format!("Error: {}", e).red());
-            if require {
-            return Err(Box::new(e));
+    if let Some(selected_files) = selected_files {
+        for selected_file in selected_files {
+            let input_path = selected_file.to_str().unwrap();
+
+            for file_config in files {
+                let input = file_config["input"].as_str().ok_or("Missing input in config")?;
+                if input_path.ends_with(input) {
+                    let output = file_config["output"].as_str().ok_or("Missing output in config")?;
+                    let patch_list = &file_config["patches"];
+                    let dump_cs = file_config["dump_cs"].as_str();
+                    let require = file_config["require"].as_bool().unwrap_or(false);
+
+                    if let Err(e) = patch_code(input_path, output, patch_list, dump_cs, log_style) {
+                        eprintln!("{}", format!("Error: {}", e).red());
+                        if require {
+                            return Err(Box::new(e));
+                        }
+                    }
+                }
             }
         }
     }
