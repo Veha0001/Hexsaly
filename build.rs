@@ -5,9 +5,13 @@ extern crate winres;
 
 fn main() {
     let target = env::var("TARGET").unwrap_or_else(|e| panic!("{}", e));
-
     println!("cargo:rerun-if-changed=build.rs");
-
+    #[cfg(target_os = "windows")]
+    if let Ok(bin_name) = env::var("CARGO_PKG_NAME") {
+        if bin_name == "BinaryPatch" {
+            return;
+        }
+    }
     #[cfg(target_os = "windows")]
     if target.contains("windows") {
         println!("cargo:rerun-if-changed=res/tsh.ico");
@@ -19,7 +23,9 @@ fn main() {
         res.set("FileVersion", env!("CARGO_PKG_VERSION"));
         res.compile().unwrap();
     }
+    #[cfg(target_os = "linux")]
     if target.contains("linux") {
         println!("cargo:rustc-link-lib=dylib=ncurses");
+        return;
     }
 }

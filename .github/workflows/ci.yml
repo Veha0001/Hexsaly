@@ -25,19 +25,23 @@ jobs:
         shell: bash
         run: |
           rustup default stable
-          rustup target add x86_64-pc-windows-gnu
+          rustup target add x86_64-pc-windows-msvc
           rustc -vV
           cargo -vV
 
       - name: Build
         shell: bash
-        run: cargo build --release
+        run: | 
+          cargo build --release --bin Patcher
+          cargo build --release --bin BinaryPatch
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: BinaryPatch
-          path: target/release/Patcher.exe
+          path: |
+            target/release/Patcher.exe
+            target/release/BinaryPatch.exe
           if-no-files-found: error
           
       - name: Release

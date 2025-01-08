@@ -3,9 +3,15 @@ name = "Patcher"
 version = "0.1.5"
 edition = "2021"
 
+[[bin]]
+name = "BinaryPatch"
+path = "src/main.rs"
+test = false
+bench = false
+
 [package.metadata.bundle]
 name = "Patcher"
-identifier = "io.github.veha0001.BinaryPatcher"
+identifier = "io.github.veha0001.BinaryPatch"
 version = "0.1.5"
 copyright = "Copyright (c) 2025 Veha Veha"
 category = "Program"
@@ -13,7 +19,7 @@ osx_minimum_system_version = "10.12"
 
 [package.metadata.winres]
 OriginalFilename = "Patcher.exe"
-LegalCopyright = "Copyright © 2025, @Veha0001"
+LegalCopyright = "Copyright © 2025"
 ProductName  = "Binary Patcher"
 FileDescription = "A Rust application for patching binaries using config.json"
 
