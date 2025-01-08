@@ -7,12 +7,6 @@ fn main() {
     let target = env::var("TARGET").unwrap_or_else(|e| panic!("{}", e));
     println!("cargo:rerun-if-changed=build.rs");
     #[cfg(target_os = "windows")]
-    if let Ok(bin_name) = env::var("CARGO_PKG_NAME") {
-        if bin_name == "BinaryPatch" {
-            return;
-        }
-    }
-    #[cfg(target_os = "windows")]
     if target.contains("windows") {
         println!("cargo:rerun-if-changed=res/tsh.ico");
         let mut res = winres::WindowsResource::new();

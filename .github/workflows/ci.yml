@@ -31,17 +31,13 @@ jobs:
 
       - name: Build
         shell: bash
-        run: | 
-          cargo build --release
-          cargo build --release --bin BinaryPatch
+        run: cargo build --release --target x86_64-pc-windows-msvc
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: BinaryPatch
-          path: |
-            target/release/Patcher.exe
-            target/release/BinaryPatch.exe
+          path: target/release/Patcher.exe
           if-no-files-found: error
           
       - name: Release
