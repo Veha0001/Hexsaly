@@ -32,7 +32,7 @@ jobs:
       - name: Build
         shell: bash
         run: | 
-          cargo build --release --bin Patcher
+          cargo build --release
           cargo build --release --bin BinaryPatch
 
       - name: Upload artifact
