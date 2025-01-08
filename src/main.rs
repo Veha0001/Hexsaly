@@ -33,15 +33,11 @@ fn replace_hex_at_offset(data: &mut Vec<u8>, offset: usize, repl: &str, log_styl
         .collect::<Result<_, _>>()?;
 
     if offset + bytes.len() > data.len() {
-        return Err("Replacement exceeds data size".into());
+        return Err(format!("Replacement exceeds data size at offset 0x{:X}", offset));
     }
 
     data[offset..offset + bytes.len()].copy_from_slice(&bytes);
-    if log_style == 1 {
-        println!("{}", format!("[OFFSET] At: 0x{:X}", offset).cyan());
-    } else {
-        println!("{}", format!("Patching at Offset: 0x{:X}", offset).cyan());
-    }
+    log_offset(offset, log_style, "Patching");
     Ok(())
 }
 
@@ -51,16 +47,20 @@ fn insert_hex_at_offset(data: &mut Vec<u8>, offset: usize, repl: &str, log_style
         .collect::<Result<_, _>>()?;
 
     if offset > data.len() {
-        return Err("Insertion exceeds data size".into());
+        return Err(format!("Insertion exceeds data size at offset 0x{:X}", offset));
     }
 
     data.splice(offset..offset, bytes.iter().cloned());
+    log_offset(offset, log_style, "Inserting");
+    Ok(())
+}
+
+fn log_offset(offset: usize, log_style: u8, action: &str) {
     if log_style == 1 {
         println!("{}", format!("[OFFSET] At: 0x{:X}", offset).cyan());
     } else {
-        println!("{}", format!("Inserting at Offset: 0x{:X}", offset).cyan());
+        println!("{}", format!("{} at Offset: 0x{:X}", action, offset).cyan());
     }
-    Ok(())
 }
 
 fn wildcard_pattern_scan(data: &[u8], pattern: &str, log_style: u8) -> Option<usize> {
@@ -76,12 +76,16 @@ fn wildcard_pattern_scan(data: &[u8], pattern: &str, log_style: u8) -> Option<us
                 }
             }
         }
-        if log_style == 1 {
-            println!("{}", format!("[FOUND] Match for pattern: {}", pattern.blue()).green());
-        }
+        log_pattern_found(pattern, log_style);
         return Some(i);
     }
     None
+}
+
+fn log_pattern_found(pattern: &str, log_style: u8) {
+    if log_style == 1 {
+        println!("{}", format!("[FOUND] Match for pattern: {}", pattern.blue()).green());
+    }
 }
 
 fn find_offset_by_method_name(method_name: &str, dump_path: &str, log_style: u8) -> Result<Option<usize>, io::Error> {
@@ -96,24 +100,32 @@ fn find_offset_by_method_name(method_name: &str, dump_path: &str, log_style: u8)
         if line.contains(method_name) {
             if let Some(caps) = offset_regex.captures(&previous_line) {
                 let offset = usize::from_str_radix(&caps[1], 16).unwrap();
-                if log_style == 1 {
-                    println!("{}", format!("[FOUND] Method name: {}", method_name.blue()).green());
-                } else {
-                    println!("{}", format!("Found {} at Offset: 0x{:X}", method_name, offset).green());
-                }
+                log_method_found(method_name, offset, log_style);
                 return Ok(Some(offset));
             } else {
-                if log_style == 1 {
-                    println!("{}", format!("[WARNING] No offset found for {}.", method_name.yellow()).red());
-                } else {
-                    println!("{}", format!("Warning: No offset found for {}.", method_name).yellow());
-                }
+                log_no_offset_found(method_name, log_style);
                 return Ok(None);
             }
         }
         previous_line = line;
     }
     Ok(None)
+}
+
+fn log_method_found(method_name: &str, offset: usize, log_style: u8) {
+    if log_style == 1 {
+        println!("{}", format!("[FOUND] Method name: {}", method_name.blue()).green());
+    } else {
+        println!("{}", format!("Found {} at Offset: 0x{:X}", method_name, offset).green());
+    }
+}
+
+fn log_no_offset_found(method_name: &str, log_style: u8) {
+    if log_style == 1 {
+        println!("{}", format!("[WARNING] No offset found for {}.", method_name.yellow()).red());
+    } else {
+        println!("{}", format!("Warning: No offset found for {}.", method_name).yellow());
+    }
 }
 
 fn apply_patch(data: &mut Vec<u8>, offset: usize, patch: &Value, log_style: u8) -> Result<(), String> {
@@ -123,19 +135,21 @@ fn apply_patch(data: &mut Vec<u8>, offset: usize, patch: &Value, log_style: u8) 
 
     if let Some(hex_replace) = patch.get("hex_replace") {
         replace_hex_at_offset(data, offset, hex_replace.as_str().unwrap(), log_style)?;
-        if log_style == 1 {
-            println!("{}", format!("[PATCH] Replaced with: {}", hex_replace.as_str().unwrap()).purple());
-        }
+        log_patch_action("Replaced", hex_replace.as_str().unwrap(), log_style);
     } else if let Some(hex_insert) = patch.get("hex_insert") {
         insert_hex_at_offset(data, offset, hex_insert.as_str().unwrap(), log_style)?;
-        if log_style == 1 {
-            println!("{}", format!("[PATCH] Inserted: {}", hex_insert.as_str().unwrap()).purple());
-        }
+        log_patch_action("Inserted", hex_insert.as_str().unwrap(), log_style);
     } else {
         return Err("Patch must contain either 'hex_replace' or 'hex_insert'.".into());
     }
 
     Ok(())
+}
+
+fn log_patch_action(action: &str, hex: &str, log_style: u8) {
+    if log_style == 1 {
+        println!("{}", format!("[PATCH] {} with: {}", action, hex).purple());
+    }
 }
 
 fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&str>, log_style: u8) -> Result<(), io::Error> {
@@ -170,30 +184,18 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
                 if let Some(offset) = find_offset_by_method_name(method_name.as_str().unwrap(), dump_path, log_style)? {
                     offset
                 } else {
-                    if log_style == 1 {
-                        println!("{}", format!("[WARNING] Method '{}' not found. Skipping patch.", method_name.as_str().unwrap()).yellow().red());
-                    } else {
-                        println!("{}", format!("Warning: Method '{}' not found. Skipping patch.", method_name.as_str().unwrap()).yellow());
-                    }
+                    log_patch_skip(method_name.as_str().unwrap(), "Method not found", log_style);
                     continue;
                 }
             } else {
-                if log_style == 1 {
-                    println!("{}", "Warning: dump_path is required for method_name patches. Skipping patch.".yellow().red());
-                } else {
-                    println!("{}", "Warning: dump_path is required for method_name patches. Skipping patch.".yellow());
-                }
+                log_patch_skip(method_name.as_str().unwrap(), "dump_path is required for method_name patches", log_style);
                 continue;
             }
         } else if let Some(offset_str) = patch.get("offset").and_then(|v| v.as_str()) {
             match usize::from_str_radix(offset_str.trim_start_matches("0x"), 16) {
                 Ok(offset) => offset,
                 Err(e) => {
-                    if log_style == 1 {
-                        println!("{}", format!("[ERROR] Parsing offset '{}': {}", offset_str, e).red());
-                    } else {
-                        println!("{}", format!("Error parsing offset '{}': {}", offset_str, e).red());
-                    }
+                    log_patch_error(offset_str, &e.to_string(), log_style);
                     continue;
                 }
             }
@@ -201,29 +203,17 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
             if let Some(offset) = wildcard_pattern_scan(&data, wildcard.as_str().unwrap(), log_style) {
                 offset
             } else {
-                if log_style == 1 {
-                    println!("{}", format!("[WARNING] Wildcard pattern '{}' not found. Skipping patch.", wildcard.as_str().unwrap()).yellow().red());
-                } else {
-                    println!("{}", format!("Warning: Wildcard pattern '{}' not found. Skipping patch.", wildcard.as_str().unwrap()).yellow());
-                }
+                log_patch_skip(wildcard.as_str().unwrap(), "Wildcard pattern not found", log_style);
                 continue;
             }
         } else {
-            if log_style == 1 {
-                println!("{}", "[WARNING] Patch does not contain a valid method_name, offset, or wildcard. Skipping patch.".yellow().red());
-            } else {
-                println!("{}", "Warning: Patch does not contain a valid method_name, offset, or wildcard. Skipping patch.".yellow());
-            }
+            log_patch_skip("unknown", "Patch does not contain a valid method_name, offset, or wildcard", log_style);
             continue;
         };
 
         // Apply the patch at the calculated offset
         if let Err(e) = apply_patch(&mut data, offset, patch, log_style) {
-            if log_style == 1 {
-                println!("{}", format!("[ERROR] Applying patch: {}", e).red());
-            } else {
-                println!("{}", format!("Error applying patch: {}", e).red());
-            }
+            log_patch_error("Applying patch", &e, log_style);
         }
     }
 
@@ -231,12 +221,32 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
     let mut output_file = OpenOptions::new().write(true).create(true).truncate(true).open(output)?;
     output_file.write_all(&data)?;
 
+    log_patch_done(output, log_style);
+    Ok(())
+}
+
+fn log_patch_skip(item: &str, reason: &str, log_style: u8) {
+    if log_style == 1 {
+        println!("{}", format!("[WARNING] {}. Skipping patch: {}", reason, item).yellow().red());
+    } else {
+        println!("{}", format!("Warning: {}. Skipping patch: {}", reason, item).yellow());
+    }
+}
+
+fn log_patch_error(item: &str, error: &str, log_style: u8) {
+    if log_style == 1 {
+        println!("{}", format!("[ERROR] {}: {}", item, error).red());
+    } else {
+        println!("{}", format!("Error: {}: {}", item, error).red());
+    }
+}
+
+fn log_patch_done(output: &str, log_style: u8) {
     if log_style == 1 {
         println!("{}", format!("[DONE] Patched file saved as: '{}'.", output).green());
     } else {
         println!("{}", format!("Patched to: '{}'.", output).green());
     }
-    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
