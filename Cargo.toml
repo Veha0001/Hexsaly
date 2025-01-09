@@ -24,7 +24,6 @@ lto = false
 incremental = false
 
 [profile.release]
-lto = false
 panic = "abort"
 codegen-units = 1
 incremental = false

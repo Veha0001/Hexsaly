@@ -3,7 +3,6 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 use serde_json::Value;
 use regex::Regex;
 use colored::*;
- // Add this for Unix-like systems
 
 #[cfg(windows)]
 mod windows_console {
