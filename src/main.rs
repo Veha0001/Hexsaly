@@ -1,5 +1,4 @@
 use std::fs::{File, OpenOptions};
-use std::path::Path;
 use std::io::{self, BufRead, BufReader, Read, Write};
 use serde_json::{Value, json};
 use regex::Regex;
@@ -266,7 +265,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    if !Path::new(config_path).exists() {
+    if !std::path::Path::new(config_path).exists() {
         let default_config = json!({
             "BinaryPatch": {
                 "files": [
@@ -296,7 +295,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
         let mut file = File::create(config_path)?;
         file.write_all(serde_json::to_string_pretty(&default_config)?.as_bytes())?;
-        file.flush()?;
         println!("Created default config file: '{}'", config_path);
     }
     // Validate and read the config file
