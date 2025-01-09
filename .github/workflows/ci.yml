@@ -22,7 +22,7 @@ jobs:
           key: cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Rust
-        shell: pwsh
+        shell: bash
         run: |
           rustup default stable
           rustup target add x86_64-pc-windows-msvc
@@ -30,7 +30,7 @@ jobs:
           cargo -vV
 
       - name: Build
-        shell: pwsh
+        shell: bash
         run: cargo build --release
 
       - name: Upload artifact

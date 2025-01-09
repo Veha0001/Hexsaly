@@ -1,6 +1,7 @@
 use std::fs::{File, OpenOptions};
+use std::path::Path;
 use std::io::{self, BufRead, BufReader, Read, Write};
-use serde_json::Value;
+use serde_json::{Value, json};
 use regex::Regex;
 use colored::*;
 
@@ -249,7 +250,6 @@ fn log_patch_done(output: &str, log_style: u8) {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     windows_console::set_console_title("Binary Patcher");
-
     // Parse command-line arguments for custom config file
     let args: Vec<String> = std::env::args().collect();
     let config_path = if args.len() > 1 {
@@ -257,7 +257,48 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         "config.json"
     };
+    // Add help and version argments
+    if args.len() > 1 && (args[1] == "-h" || args[1] == "--help") {
+        println!("Usage: {} [config.json]", args[0]);
+        return Ok(());
+    } else if args.len() > 1 && (args[1] == "-v" || args[1] == "--version") {
+        println!("Binary Patcher v{}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
 
+    if !Path::new(config_path).exists() {
+        let default_config = json!({
+            "BinaryPatch": {
+                "files": [
+                    {
+                        "input": "input.bin",
+                        "output": "output.bin",
+                        "patches": [
+                            {
+                                "offset": "0x123ABC",
+                                "hex_insert": "B8 85 47 DE 63 C3"
+                            },
+                            {
+                                "wildcard": "48 83 EC ?? 80 3D ?? ?? ?? ?? ?? 75 ?? 8B ",
+                                "hex_replace": "B8 85 47 DE 63 C3"
+                            },
+                            {
+                                "method_name": "SomeMethodNameFromDumpCsFile",
+                                "hex_replace": "B8 85 47 DE 63 C3"
+                            }
+                        ],
+                        "dump_cs": "dump.cs",
+                        "require": false
+                    }
+                ],
+                "log_style": 1
+            }
+        });
+        let mut file = File::create(config_path)?;
+        file.write_all(serde_json::to_string_pretty(&default_config)?.as_bytes())?;
+        file.flush()?;
+        println!("Created default config file: '{}'", config_path);
+    }
     // Validate and read the config file
     let config_metadata = std::fs::metadata(config_path)?;
     if config_metadata.len() > 10 * 1024 * 1024 {
@@ -267,7 +308,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let file = File::open(config_path)?;
     let reader = BufReader::new(file);
     let config: Value = serde_json::from_reader(reader)?;
-
+    
     // Validate the JSON structure
     if !config.is_object() || !config["BinaryPatch"].is_object() || !config["BinaryPatch"]["files"].is_array() {
         return Err(Box::new(io::Error::new(io::ErrorKind::InvalidData, "Invalid config file structure")));
