@@ -43,10 +43,7 @@ jobs:
       - name: Release
         if: ${{ github.event_name == 'push' }}
         uses: softprops/action-gh-release@v2.2.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           name: Binary Patcher
-          make_latest: true
           tag_name: latest-nightly
           files: target/release/Patcher.exe
