@@ -7,7 +7,7 @@ fn main() {
     let target = env::var("TARGET").unwrap_or_else(|e| panic!("{}", e));
     println!("cargo:rerun-if-changed=build.rs");
     #[cfg(target_os = "windows")]
-    if target.contains("windows") {
+    if target.contains("windows") && env::var("PROFILE").unwrap() == "release" {
         println!("cargo:rerun-if-changed=res/tsh.ico");
         let mut res = winres::WindowsResource::new();
         res.set_icon("res/tsh.ico")

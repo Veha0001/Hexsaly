@@ -31,13 +31,17 @@ jobs:
 
       - name: Build
         shell: pwsh
-        run: cargo build --release
+        run: |
+          cargo build 
+          cargo build --release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: BinaryPatch
-          path: target/release/Patcher.exe
+          path: |
+            target/debug/Patcher.exe
+            target/release/Patcher.exe
           if-no-files-found: error
           
       - name: Release
