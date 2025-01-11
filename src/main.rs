@@ -120,7 +120,7 @@ fn log_method_found(method_name: &str, offset: usize, log_style: u8) {
 
 fn log_no_offset_found(method_name: &str, log_style: u8) {
     if log_style == 1 {
-        println!("{}", format!("[WARNING] No offset found for {}.", method_name.yellow()).red());
+        println!("{}", format!("[WARNING] No offset found for {}.", method_name.yellow()).bold());
     } else {
         println!("{}", format!("Warning: No offset found for {}.", method_name).yellow());
     }
@@ -265,6 +265,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    // Create a default config file if it doesn't exist
     if !std::path::Path::new(config_path).exists() {
         let default_config = json!({
             "BinaryPatch": {
@@ -296,6 +297,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut file = File::create(config_path)?;
         file.write_all(serde_json::to_string_pretty(&default_config)?.as_bytes())?;
         println!("Created default config file: '{}'", config_path);
+        return Ok(());
     }
     // Validate and read the config file
     let config_metadata = std::fs::metadata(config_path)?;
@@ -330,11 +332,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // Prevent the console from closing too quickly
     #[cfg(windows)]
     {
-        // Prevent the console from closing too quickly
-        println!("Press Enter to exit...");
-        io::stdin().read_line(&mut String::new()).unwrap();
+        println!("Press any key to exit...");
+        let _ = std::io::stdin().read(&mut [0u8]).unwrap();
     }
     Ok(())
 }

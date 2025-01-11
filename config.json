@@ -1,0 +1,27 @@
+{
+  "BinaryPatch": {
+    "files": [
+      {
+        "dump_cs": "dump.cs",
+        "input": "input.bin",
+        "output": "output.bin",
+        "patches": [
+          {
+            "hex_insert": "B8 85 47 DE 63 C3",
+            "offset": "0x123ABC"
+          },
+          {
+            "hex_replace": "B8 85 47 DE 63 C3",
+            "wildcard": "48 83 EC ?? 80 3D ?? ?? ?? ?? ?? 75 ?? 8B "
+          },
+          {
+            "hex_replace": "B8 85 47 DE 63 C3",
+            "method_name": "SomeMethodNameFromDumpCsFile"
+          }
+        ],
+        "require": false
+      }
+    ],
+    "log_style": 1
+  }
+}
