@@ -214,6 +214,10 @@ fn patch_code(input: &str, output: &str, patch_list: &Value, dump_path: Option<&
             log_patch_error("Applying patch", &e, log_style);
         }
     }
+    
+    if data.is_empty() {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "No data to write to output file"));
+    }
 
     // Open output file with write permissions
     let mut output_file = OpenOptions::new().write(true).create(true).truncate(true).open(output)?;
