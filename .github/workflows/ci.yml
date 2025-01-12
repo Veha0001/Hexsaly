@@ -38,61 +38,16 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Windows-BinaryPatch
+          name: BinaryPatch
           path: |
             target/debug/Patcher.exe
             target/release/Patcher.exe
           if-no-files-found: error
-
+          
       - name: Release
         if: ${{ github.event_name == 'push' }}
         uses: softprops/action-gh-release@v2.2.1
         with:
-          name: Windows Binary Patcher
+          name: Binary Patcher
           tag_name: latest-nightly
           files: target/release/Patcher.exe
-
-  linux-build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cargo Caches
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo
-            ~/.rustup
-            target
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Setup Rust
-        run: |
-          rustup default stable
-          rustup target add x86_64-unknown-linux-gnu
-          rustc -vV
-          cargo -vV
-
-      - name: Build
-        run: |
-          cargo build 
-          cargo build --release
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Linux-BinaryPatch
-          path: |
-            target/debug/Patcher
-            target/release/Patcher
-          if-no-files-found: error
-
-      - name: Release
-        if: ${{ github.event_name == 'push' }}
-        uses: softprops/action-gh-release@v2.2.1
-        with:
-          name: Linux Binary Patcher
-          tag_name: latest-nightly
-          files: target/release/Patcher
-          
