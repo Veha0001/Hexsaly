@@ -11,7 +11,9 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
-        target: [x86_64-pc-windows-msvc, x86_64-unknown-linux-gnu]
+        target:
+          windows-latest: x86_64-pc-windows-msvc
+          ubuntu-latest: x86_64-unknown-linux-gnu
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,15 +28,13 @@ jobs:
           key: cargo-${{ matrix.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Rust
-        shell: ${{ matrix.os == 'windows-latest' && 'pwsh' || 'bash' }}
         run: |
           rustup default stable
-          rustup target add ${{ matrix.target }}
+          rustup target add ${{ matrix.target[matrix.os] }}
           rustc -vV
           cargo -vV
 
       - name: Build
-        shell: ${{ matrix.os == 'windows-latest' && 'pwsh' || 'bash' }}
         run: |
           cargo build 
           cargo build --release
@@ -48,10 +48,19 @@ jobs:
             target/release/${{ matrix.os == 'windows-latest' && 'Patcher.exe' || 'Patcher' }}
           if-no-files-found: error
 
-      - name: Release
-        if: ${{ github.event_name == 'push' }}
+  release:
+    if: ${{ github.event_name == 'push' }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload Release Artifacts
         uses: softprops/action-gh-release@v2.2.1
         with:
           name: Binary Patcher
           tag_name: latest-nightly
-          files: target/release/${{ matrix.os == 'windows-latest' && 'Patcher.exe' || 'Patcher' }}
+          files: |
+            target/release/Patcher
+            target/release/Patcher.exe
