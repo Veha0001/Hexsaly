@@ -1,19 +1,13 @@
 name: CI
 
-on: [push, pull_request]
+on: [ push , pull_request ]
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-        target:
-          windows-latest: x86_64-pc-windows-msvc
-          ubuntu-latest: x86_64-unknown-linux-gnu
+  windows-build:
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,12 +19,58 @@ jobs:
             ~/.cargo
             ~/.rustup
             target
-          key: cargo-${{ matrix.os }}-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Setup Rust
+        shell: pwsh
+        run: |
+          rustup default stable
+          rustup target add x86_64-pc-windows-msvc
+          rustc -vV
+          cargo -vV
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cargo build 
+          cargo build --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-BinaryPatch
+          path: |
+            target/debug/Patcher.exe
+            target/release/Patcher.exe
+          if-no-files-found: error
+
+      - name: Release
+        if: ${{ github.event_name == 'push' }}
+        uses: softprops/action-gh-release@v2.2.1
+        with:
+          name: Windows Binary Patcher
+          tag_name: latest-nightly
+          files: target/release/Patcher.exe
+
+  linux-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cargo Caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo
+            ~/.rustup
+            target
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Rust
         run: |
           rustup default stable
-          rustup target add ${{ matrix.target[matrix.os] }}
+          rustup target add x86_64-unknown-linux-gnu
           rustc -vV
           cargo -vV
 
@@ -42,25 +82,17 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BinaryPatch-${{ matrix.os }}
+          name: Linux-BinaryPatch
           path: |
-            target/debug/${{ matrix.os == 'windows-latest' && 'Patcher.exe' || 'Patcher' }}
-            target/release/${{ matrix.os == 'windows-latest' && 'Patcher.exe' || 'Patcher' }}
+            target/debug/Patcher
+            target/release/Patcher
           if-no-files-found: error
 
-  release:
-    if: ${{ github.event_name == 'push' }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Upload Release Artifacts
+      - name: Release
+        if: ${{ github.event_name == 'push' }}
         uses: softprops/action-gh-release@v2.2.1
         with:
-          name: Binary Patcher
+          name: Linux Binary Patcher
           tag_name: latest-nightly
-          files: |
-            target/release/Patcher
-            target/release/Patcher.exe
+          files: target/release/Patcher
+          
