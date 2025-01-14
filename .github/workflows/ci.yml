@@ -25,7 +25,6 @@ jobs:
         shell: pwsh
         run: |
           rustup default stable
-          rustup target add x86_64-pc-windows-msvc
           rustc -vV
           cargo -vV
 
@@ -33,15 +32,13 @@ jobs:
         shell: pwsh
         run: |
           cargo build 
-          cargo build --release
+          cargo build --release --all-targets
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: BinaryPatch
-          path: |
-            target/debug/Patcher.exe
-            target/release/Patcher.exe
+          path: target/release/Patcher.exe
           if-no-files-found: error
           
       - name: Release
