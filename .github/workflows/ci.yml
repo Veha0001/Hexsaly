@@ -30,9 +30,7 @@ jobs:
 
       - name: Build
         shell: pwsh
-        run: |
-          cargo build 
-          cargo build --release --all-targets
+        run: cargo build --release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
