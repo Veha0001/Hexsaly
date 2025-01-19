@@ -383,43 +383,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a default config file if it doesn't exist
     if !std::path::Path::new(config_path).exists() {
         println!("The config file '{}' does not exist.", config_path);
-        print!("Would you like to create a default config file? (y/n): ");
-        io::Write::flush(&mut io::stdout())?;
-        let mut input = String::new();
-        io::stdin().read_line(&mut input)?;
-        if input.trim().to_lowercase() == "y" {
-            let default_config = json!({
-                "BinaryPatch": {
-                    "files": [
-                        {
-                            "input": "input.bin",
-                            "output": "output.bin",
-                            "patches": [
-                                {
-                                    "method_name": "MethodToPatch",
-                                    "hex_replace": "90 90 90 90 90",
-                                },
-                                {
-                                    "offset": "0x1234",
-                                    "hex_insert": "90 90 90 90 90",
-                                },
-                                {
-                                    "wildcard": "90 ?? 90",
-                                    "hex_replace": "90 90 90",
-                                }
-                            ],
-                            "dump_cs": "dump.cs",
-                            "require": false
-                        }
-                    ],
-                    "log_style": 0
-                }
-            });
-            let mut file = File::create(config_path)?;
-            file.write_all(serde_json::to_string_pretty(&default_config)?.as_bytes())?;
-            println!("Default config file created as '{}'.", config_path);
-            println!("Please edit the config file with your own patches.");
-        }
+        let default_config = json!({
+            "BinaryPatch": {
+                "files": [
+                    {
+                        "input": "input.bin",
+                        "output": "output.bin",
+                        "patches": [
+                            {
+                                "method_name": "MethodToPatch",
+                                "hex_replace": "90 90 90 90 90",
+                            },
+                            {
+                                "offset": "0x1234",
+                                "hex_insert": "90 90 90 90 90",
+                            },
+                            {
+                                "wildcard": "90 ?? 90",
+                                "hex_replace": "90 90 90",
+                            }
+                        ],
+                        "dump_cs": "dump.cs",
+                        "require": false
+                    }
+                ],
+                "log_style": 0
+            }
+        });
+        let mut file = File::create(config_path)?;
+        file.write_all(serde_json::to_string_pretty(&default_config)?.as_bytes())?;
+        println!("Default config file created as '{}'.", config_path);
+        println!("Please edit the config file with your own patches.");
         #[cfg(windows)]
         let _ = Command::new("cmd").arg("/c").arg("pause").status();
         return Ok(());
