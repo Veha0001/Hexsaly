@@ -3,8 +3,6 @@ use regex::Regex;
 use serde_json::{json, Value};
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
-#[cfg(windows)]
-use std::process::Command;
 
 #[cfg(windows)]
 mod windows_console {
@@ -22,7 +20,22 @@ mod windows_console {
         }
     }
 }
+#[cfg(windows)]
+fn pause() {
+    let mut stdin = io::stdin();
+    let mut stdout = io::stdout();
 
+    // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+    write!(stdout, "Press any key to continue...").unwrap();
+    stdout.flush().unwrap();
+
+    // Read a single byte and discard
+    let _ = stdin.read(&mut [0u8]).unwrap();
+}
+#[cfg(not(windows))]
+fn pause() {
+    // No-op on non-Windows platforms
+}
 #[cfg(not(windows))]
 mod windows_console {
     pub fn set_console_title(_title: &str) {
@@ -414,8 +427,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         file.write_all(serde_json::to_string_pretty(&default_config)?.as_bytes())?;
         println!("Default config file created as '{}'.", config_path);
         println!("Please edit the config file with your own patches.");
-        #[cfg(windows)]
-        let _ = Command::new("cmd").arg("/c").arg("pause").status();
+        pause();
         return Ok(());
     }
     // Validate and read the config file
@@ -464,8 +476,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Err(Box::new(e));
             }
         }
-        #[cfg(windows)]
-        let _ = Command::new("cmd").arg("/c").arg("pause").status();
+        pause();
     }
     Ok(())
 }
