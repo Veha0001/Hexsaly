@@ -359,6 +359,9 @@ fn log_patch_done(output: &str, log_style: u8) {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     windows_console::set_console_title("Binary Patcher");
+    // Enable ANSI color codes on Windows
+    #[cfg(windows)]
+    colored::control::set_virtual_terminal(true).unwrap();
     // Parse command-line arguments for custom config file
     let args: Vec<String> = std::env::args().collect();
     let config_path = if args.len() > 1 {
@@ -414,6 +417,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             file.write_all(serde_json::to_string_pretty(&default_config)?.as_bytes())?;
             println!("Default config file created as '{}'.", config_path);
             println!("Please edit the config file with your own patches.");
+        }
+        #[cfg(windows)]
+        {
+            println!("Press any key to exit...");
+            let _ = std::io::stdin().read(&mut [0u8]).unwrap();
         }
         return Ok(());
     }
