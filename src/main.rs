@@ -3,6 +3,7 @@ use regex::Regex;
 use serde_json::{json, Value};
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
+#[cfg(windows)]
 use std::process::Command;
 
 #[cfg(windows)]
@@ -420,7 +421,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Please edit the config file with your own patches.");
         }
         #[cfg(windows)]
-        Command::new("Pause").status().unwrap();
+        Command::new("pause").status().unwrap();
         return Ok(());
     }
     // Validate and read the config file
@@ -473,6 +474,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Prevent the console from closing too quickly
     #[cfg(windows)]
-    Command::new("Pause").status().unwrap();
+    Command::new("pause").status().unwrap();
     Ok(())
 }
