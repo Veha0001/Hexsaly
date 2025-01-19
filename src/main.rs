@@ -421,7 +421,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Please edit the config file with your own patches.");
         }
         #[cfg(windows)]
-        Command::new("pause").status().unwrap();
+        let _ = Command::new("cmd").arg("/c").arg("pause").status();
         return Ok(());
     }
     // Validate and read the config file
@@ -470,10 +470,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Err(Box::new(e));
             }
         }
+        #[cfg(windows)]
+        let _ = Command::new("cmd").arg("/c").arg("pause").status();
     }
-
-    // Prevent the console from closing too quickly
-    #[cfg(windows)]
-    Command::new("pause").status().unwrap();
     Ok(())
 }
