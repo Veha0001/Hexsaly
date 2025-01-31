@@ -476,7 +476,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Err(Box::new(e));
             }
         }
-        pause();
     }
+    pause();
     Ok(())
 }
