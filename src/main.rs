@@ -1,6 +1,6 @@
 use colored::*;
 use regex::Regex;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
 
@@ -395,7 +395,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a default config file if it doesn't exist
     if !std::path::Path::new(config_path).exists() {
-        println!("The config file '{}' does not exist.", config_path)
+        println!("The config file '{}' does not exist.", config_path);
         pause();
         return Ok(());
     }
