@@ -22,6 +22,11 @@ mod windows_console {
 }
 #[cfg(windows)]
 fn pause() {
+    let args: Vec<String> = std::env::args().collect();
+    if args.contains(&String::from("-k")) {
+        return;
+    }
+    
     let mut stdin = io::stdin();
     let mut stdout = io::stdout();
 
