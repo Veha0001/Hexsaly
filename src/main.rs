@@ -1,4 +1,5 @@
 use colored::*;
+use clap::Parser;
 use regex::Regex;
 use serde_json::Value;
 use std::fs::{File, OpenOptions};
@@ -22,11 +23,9 @@ mod windows_console {
 }
 #[cfg(windows)]
 fn pause() {
-    let args: Vec<String> = std::env::args().collect();
-    if args.contains(&String::from("-k")) {
+    if Args::parse().bypass_pause {
         return;
     }
-    
     let mut stdin = io::stdin();
     let mut stdout = io::stdout();
 
@@ -52,7 +51,7 @@ fn replace_hex_at_offset(
     data: &mut Vec<u8>,
     offset: usize,
     repl: &str,
-    log_style: u8,
+    log_style: bool,
 ) -> Result<(), String> {
     let bytes: Vec<u8> = repl
         .split_whitespace()
@@ -75,7 +74,7 @@ fn insert_hex_at_offset(
     data: &mut Vec<u8>,
     offset: usize,
     repl: &str,
-    log_style: u8,
+    log_style: bool,
 ) -> Result<(), String> {
     let bytes: Vec<u8> = repl
         .split_whitespace()
@@ -94,15 +93,15 @@ fn insert_hex_at_offset(
     Ok(())
 }
 
-fn log_offset(offset: usize, log_style: u8, action: &str) {
-    if log_style == 1 {
+fn log_offset(offset: usize, log_style: bool, action: &str) {
+    if log_style {
         println!("{}", format!("[OFFSET] At: 0x{:X}", offset).cyan());
     } else {
         println!("{}", format!("{} at Offset: 0x{:X}", action, offset).cyan());
     }
 }
 
-fn wildcard_pattern_scan(data: &[u8], pattern: &str, log_style: u8) -> Option<usize> {
+fn wildcard_pattern_scan(data: &[u8], pattern: &str, log_style: bool) -> Option<usize> {
     let pattern_bytes: Vec<Option<u8>> = pattern
         .split_whitespace()
         .map(|s| {
@@ -128,8 +127,8 @@ fn wildcard_pattern_scan(data: &[u8], pattern: &str, log_style: u8) -> Option<us
     None
 }
 
-fn log_pattern_found(pattern: &str, log_style: u8) {
-    if log_style == 1 {
+fn log_pattern_found(pattern: &str, log_style: bool) {
+    if log_style {
         println!(
             "{}",
             format!("[FOUND] Match for pattern: {}", pattern.blue()).green()
@@ -140,7 +139,7 @@ fn log_pattern_found(pattern: &str, log_style: u8) {
 fn find_offset_by_method_name(
     method_name: &str,
     dump_path: &str,
-    log_style: u8,
+    log_style: bool,
 ) -> Result<Option<usize>, io::Error> {
     let file = File::open(dump_path)?;
     let reader = BufReader::new(file);
@@ -165,8 +164,8 @@ fn find_offset_by_method_name(
     Ok(None)
 }
 
-fn log_method_found(method_name: &str, offset: usize, log_style: u8) {
-    if log_style == 1 {
+fn log_method_found(method_name: &str, offset: usize, log_style: bool) {
+    if log_style {
         println!(
             "{}",
             format!("[FOUND] Method name: {}", method_name.blue()).green()
@@ -179,8 +178,8 @@ fn log_method_found(method_name: &str, offset: usize, log_style: u8) {
     }
 }
 
-fn log_no_offset_found(method_name: &str, log_style: u8) {
-    if log_style == 1 {
+fn log_no_offset_found(method_name: &str, log_style: bool) {
+    if log_style {
         println!(
             "{}",
             format!("[WARNING] No offset found for {}.", method_name.yellow()).bold()
@@ -197,7 +196,7 @@ fn apply_patch(
     data: &mut Vec<u8>,
     offset: usize,
     patch: &Value,
-    log_style: u8,
+    log_style: bool,
 ) -> Result<(), String> {
     if offset >= data.len() {
         return Err(format!(
@@ -221,8 +220,8 @@ fn apply_patch(
     Ok(())
 }
 
-fn log_patch_action(action: &str, hex: &str, log_style: u8) {
-    if log_style == 1 {
+fn log_patch_action(action: &str, hex: &str, log_style: bool) {
+    if log_style {
         println!("{}", format!("[PATCH] {} with: {}", action, hex).purple());
     }
 }
@@ -232,7 +231,7 @@ fn patch_code(
     output: &str,
     patch_list: &Value,
     dump_path: Option<&str>,
-    log_style: u8,
+    log_style: bool,
 ) -> Result<(), io::Error> {
     // Check if input file exists and is readable
     if !std::path::Path::new(input).exists() {
@@ -342,8 +341,8 @@ fn patch_code(
     Ok(())
 }
 
-fn log_patch_skip(item: &str, reason: &str, log_style: u8) {
-    if log_style == 1 {
+fn log_patch_skip(item: &str, reason: &str, log_style: bool) {
+    if log_style {
         println!(
             "{}",
             format!("[WARNING] {}. Skipping patch: {}", reason, item)
@@ -358,16 +357,16 @@ fn log_patch_skip(item: &str, reason: &str, log_style: u8) {
     }
 }
 
-fn log_patch_error(item: &str, error: &str, log_style: u8) {
-    if log_style == 1 {
+fn log_patch_error(item: &str, error: &str, log_style: bool) {
+    if log_style {
         println!("{}", format!("[ERROR] {}: {}", item, error).red());
     } else {
         println!("{}", format!("Error: {}: {}", item, error).red());
     }
 }
 
-fn log_patch_done(output: &str, log_style: u8) {
-    if log_style == 1 {
+fn log_patch_done(output: &str, log_style: bool) {
+    if log_style {
         println!(
             "{}",
             format!("[DONE] Patched file saved as: '{}'.", output).green()
@@ -377,35 +376,35 @@ fn log_patch_done(output: &str, log_style: u8) {
     }
 }
 
+#[derive(Debug, clap::Parser)]
+#[command(name = "Patcher", about = "A tool to patch binary files based on a configuration file", version, author)]
+struct Args {
+  #[arg(short, long, help = "Path to the config file", default_value = "config.json")]
+  config: String,
+
+  #[cfg(windows)]
+  #[arg(short = 'k', long, help = "Bypass Pause")]
+  bypass_pause: bool,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     windows_console::set_console_title("Binary Patcher");
     // Enable ANSI color codes on Windows
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
     // Parse command-line arguments for custom config file
-    let args: Vec<String> = std::env::args().collect();
-    let config_path = if args.len() > 1 {
-        &args[1]
-    } else {
-        "config.json"
-    };
-    // Add help and version argments
-    if args.len() > 1 && (args[1] == "-h" || args[1] == "--help") {
-        println!("Usage: {} [config.json]", args[0]);
-        return Ok(());
-    } else if args.len() > 1 && (args[1] == "-v" || args[1] == "--version") {
-        println!("Binary Patcher v{}", env!("CARGO_PKG_VERSION"));
-        return Ok(());
-    }
+    let args = Args::parse(); 
+    let config_path = args.config;
 
     // Create a default config file if it doesn't exist
-    if !std::path::Path::new(config_path).exists() {
+    if !std::path::Path::new(config_path.as_str()).exists() {
         println!("The config file '{}' does not exist.", config_path);
         pause();
         return Ok(());
     }
+
     // Validate and read the config file
-    let config_metadata = std::fs::metadata(config_path)?;
+    let config_metadata = std::fs::metadata(config_path.clone())?;
     if config_metadata.len() > 10 * 1024 * 1024 {
         return Err(Box::new(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -431,7 +430,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let files = config["BinaryPatch"]["files"]
         .as_array()
         .ok_or("Missing files in config")?;
-    let log_style = config["BinaryPatch"]["log_style"].as_u64().unwrap_or(0) as u8;
+    let log_style = config["BinaryPatch"]["style"].as_bool().unwrap_or(true);
 
     for file_config in files {
         let input = file_config["input"]

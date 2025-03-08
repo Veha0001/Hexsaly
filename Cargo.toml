@@ -1,13 +1,13 @@
 [package]
 name = "Patcher"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 publish = false
 
 
 [package.metadata.bundle]
 name = "Patcher"
-identifier = "io.github.veha0001.BinaryPatch"
+identifier = "githubcom.Veha0001.BinaryPatch"
 version = "0.1.6"
 copyright = "Copyright © 2025"
 category = "Program"
@@ -31,6 +31,7 @@ incremental = false
 opt-level = 3
 
 [dependencies]
+clap = { version = "4.0", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 regex = "1.11"
