@@ -17,6 +17,7 @@ BinaryPatch is a tool designed to apply patches to binary files. It supports var
 ```json
 {
     "BinaryPatch": {
+        "menu": false,
         "style": true,
         "files": [
             {

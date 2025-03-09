@@ -4,6 +4,7 @@ use regex::Regex;
 use serde_json::Value;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
+use inquire::Select;
 
 #[cfg(windows)]
 mod windows_console {
@@ -376,6 +377,22 @@ fn log_patch_done(output: &str, log_style: bool) {
     }
 }
 
+fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
+    let options: Vec<String> = files.iter().map(|file_config| {
+        let input = file_config["input"].as_str().unwrap_or("Unknown");
+        let title = file_config["title"].as_str().unwrap_or(input);
+        format!("{}", title)
+    }).collect();
+
+    let selection = Select::new("Select a file to patch:", options)
+        .with_vim_mode(true)
+        .raw_prompt()
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "Invalid selection"))?
+        .index;
+
+    Ok(selection)
+}
+
 #[derive(Debug, clap::Parser)]
 #[command(name = "Patcher", about = "A tool to patch binary files based on a configuration file", version, author)]
 struct Args {
@@ -396,11 +413,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(); 
     let config_path = args.config;
 
-    // Create a default config file if it doesn't exist
     if !std::path::Path::new(config_path.as_str()).exists() {
-        println!("The config file '{}' does not exist.", config_path);
-        pause();
-        return Ok(());
+        return Err(Box::new(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Config file does not exist",
+        )));
     }
 
     // Validate and read the config file
@@ -431,8 +448,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .as_array()
         .ok_or("Missing files in config")?;
     let log_style = config["BinaryPatch"]["style"].as_bool().unwrap_or(true);
+    let use_menu = config["BinaryPatch"]["menu"].as_bool().unwrap_or(false);
 
-    for file_config in files {
+    let file_configs = if use_menu {
+        let selected_index = display_menu(files)?;
+        vec![files[selected_index].clone()]
+    } else {
+        files.clone()
+    };
+
+    for file_config in file_configs {
         let input = file_config["input"]
             .as_str()
             .ok_or("Missing input in config")?;

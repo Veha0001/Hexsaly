@@ -43,6 +43,8 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         uses: softprops/action-gh-release@v2.2.1
         with:
+          generate_release_notes: true
+          prerelease: true
           name: Binary Patcher
           tag_name: latest-nightly
           files: target/release/Patcher.exe
