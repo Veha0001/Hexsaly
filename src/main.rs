@@ -5,6 +5,7 @@ use serde_json::Value;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use inquire::Select;
+use std::path::PathBuf;
 
 #[cfg(windows)]
 mod windows_console {
@@ -394,7 +395,7 @@ fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
 }
 
 #[derive(Debug, clap::Parser)]
-#[command(name = "Patcher", about = "A tool to patch binary files based on a configuration file", version, author)]
+#[command(name = "Hexsaly", about = "A tool to patch binary files based on a configuration file", version, author)]
 struct Args {
   #[arg(short, long, help = "Path to the config file", default_value = "config.json")]
   config: String,
@@ -404,24 +405,44 @@ struct Args {
   bypass_pause: bool,
 }
 
+fn get_config_path(cli_config: &str) -> Option<PathBuf> {
+    // First check if CLI provided path exists
+    let cli_path = PathBuf::from(cli_config);
+    if cli_path.exists() {
+        return Some(cli_path);
+    }
+
+    if let Some(config_dir) = dirs::config_dir() {
+        let default_config = config_dir.join("hexsaly").join("config.json");
+        if default_config.exists() {
+            return Some(default_config);
+        }
+    }
+
+    // Finally check ./config.json
+    let local_config = PathBuf::from("config.json");
+    if local_config.exists() {
+        return Some(local_config);
+    }
+
+    None
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    windows_console::set_console_title("Binary Patcher");
+    windows_console::set_console_title("Hexsaly");
     // Enable ANSI color codes on Windows
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
     // Parse command-line arguments for custom config file
     let args = Args::parse(); 
-    let config_path = args.config;
-
-    if !std::path::Path::new(config_path.as_str()).exists() {
-        return Err(Box::new(io::Error::new(
+    let config_path = get_config_path(&args.config)
+        .ok_or_else(|| io::Error::new(
             io::ErrorKind::NotFound,
-            "Config file does not exist",
-        )));
-    }
+            "Config file not found in any of the default locations"
+        ))?;
 
     // Validate and read the config file
-    let config_metadata = std::fs::metadata(config_path.clone())?;
+    let config_metadata = std::fs::metadata(&config_path)?;
     if config_metadata.len() > 10 * 1024 * 1024 {
         return Err(Box::new(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -435,8 +456,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Validate the JSON structure
     if !config.is_object()
-        || !config["BinaryPatch"].is_object()
-        || !config["BinaryPatch"]["files"].is_array()
+        || !config["Hexsaly"].is_object()
+        || !config["Hexsaly"]["files"].is_array()
     {
         return Err(Box::new(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -444,11 +465,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )));
     }
 
-    let files = config["BinaryPatch"]["files"]
+    let files = config["Hexsaly"]["files"]
         .as_array()
         .ok_or("Missing files in config")?;
-    let log_style = config["BinaryPatch"]["style"].as_bool().unwrap_or(true);
-    let use_menu = config["BinaryPatch"]["menu"].as_bool().unwrap_or(false);
+    let log_style = config["Hexsaly"]["style"].as_bool().unwrap_or(true);
+    let use_menu = config["Hexsaly"]["menu"].as_bool().unwrap_or(false);
 
     let file_configs = if use_menu {
         let selected_index = display_menu(files)?;

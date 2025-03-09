@@ -35,8 +35,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BinaryPatch
-          path: target/release/Patcher.exe
+          name: Hexsaly
+          path: target/release/hexsaly.exe
           if-no-files-found: error
           
       - name: Release
@@ -44,7 +44,6 @@ jobs:
         uses: softprops/action-gh-release@v2.2.1
         with:
           generate_release_notes: true
-          prerelease: true
-          name: Binary Patcher
+          name: Hexsaly
           tag_name: latest-nightly
-          files: target/release/Patcher.exe
+          files: target/release/hexsaly.exe

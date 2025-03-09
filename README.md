@@ -1,8 +1,5 @@
-# BinaryPatch
-My Binary Patcher built with Rust.
-
-## Overview
-BinaryPatch is a tool designed to apply patches to binary files. It supports various methods for locating the patch offsets, including direct offsets, method names, and wildcard patterns.
+# Hexsaly
+Hexsaly is a tool designed to apply patches to binary files. It supports various methods for locating the patch offsets, including direct offsets, method names, and wildcard patterns.
 
 ## Features
 - Apply patches to binary files using hex codes.
@@ -16,11 +13,12 @@ BinaryPatch is a tool designed to apply patches to binary files. It supports var
 **Configuration File**: Create a `config.json` file with the following structure:
 ```json
 {
-    "BinaryPatch": {
+    "Hexsaly": {
         "menu": false,
         "style": true,
         "files": [
             {
+                "title": "Example",
                 "dump_cs": "path/to/dump.cs",
                 "input": "path/to/input/file",
                 "output": "path/to/output/file",

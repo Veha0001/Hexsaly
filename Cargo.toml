@@ -1,5 +1,5 @@
 [package]
-name = "Patcher"
+name = "hexsaly"
 version = "0.1.8"
 authors = ["Veha0001"]
 edition = "2021"
@@ -7,17 +7,17 @@ publish = false
 
 
 [package.metadata.bundle]
-name = "Patcher"
-identifier = "githubcom.Veha0001.BinaryPatch"
+name = "hexsaly"
+identifier = "githubcom.Veha0001.hexsaly"
 version = "0.1.6"
 copyright = "Copyright © 2025"
 category = "Program"
 osx_minimum_system_version = "10.12"
 
 [package.metadata.winres]
-OriginalFilename = "Patcher.exe"
+OriginalFilename = "hexsaly.exe"
 LegalCopyright = "Copyright © 2025"
-ProductName  = "Binary Patcher"
+ProductName  = "Hexsaly"
 FileDescription = "A Rust application for patching binaries using config.json"
 
 [profile.dev]
@@ -32,6 +32,7 @@ incremental = false
 opt-level = 3
 
 [dependencies]
+dirs = "6.0.0"
 clap = { version = "4.0", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
