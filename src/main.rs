@@ -412,6 +412,13 @@ fn get_config_path(cli_config: &str) -> Option<PathBuf> {
         return Some(cli_path);
     }
 
+    // Check ./config.json first
+    let local_config = PathBuf::from("config.json");
+    if local_config.exists() {
+        return Some(local_config);
+    }
+
+    // Then check config directory
     if let Some(config_dir) = dirs::config_dir() {
         let default_config = config_dir.join("hexsaly").join("config.json");
         if default_config.exists() {
@@ -419,9 +426,30 @@ fn get_config_path(cli_config: &str) -> Option<PathBuf> {
         }
     }
 
-    // Finally check ./config.json
-    let local_config = PathBuf::from("config.json");
-    if local_config.exists() {
+    // If no config exists, create a default one in current directory
+    let default_content = r#"{
+    "Hexsaly": {
+        "style": true,
+        "menu": true,
+        "files": [
+            {
+                "title": "Example Patch",
+                "input": "input.exe",
+                "output": "patched.exe",
+                "patches": [
+                    {
+                        "offset": "0x1000",
+                        "hex_replace": "90 90 90"
+                    }
+                ]
+            }
+        ]
+    }
+}"#;
+
+    // Create default config file
+    if let Ok(_) = std::fs::write(&local_config, default_content) {
+        println!("{}", format!("Created default config.json in current directory.").blue());
         return Some(local_config);
     }
 
@@ -437,8 +465,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(); 
     let config_path = get_config_path(&args.config)
         .ok_or_else(|| io::Error::new(
-            io::ErrorKind::NotFound,
-            "Config file not found in any of the default locations"
+            io::ErrorKind::Other,
+            "Failed to create or find config file. Please ensure you have write permissions in the current directory."
         ))?;
 
     // Validate and read the config file
