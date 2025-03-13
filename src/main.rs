@@ -384,14 +384,17 @@ fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
         let title = file_config["title"].as_str().unwrap_or(input);
         format!("{}", title)
     }).collect();
-
-    let selection = Select::new("Select a file to patch:", options)
+    
+    match Select::new("Select a file to patch:", options)
         .with_vim_mode(true)
         .raw_prompt()
-        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "Invalid selection"))?
-        .index;
-
-    Ok(selection)
+    {
+        Ok(selection) => Ok(selection.index),
+        Err(_) => {
+            println!("{}", "Operation cancelled by user.".yellow());
+            std::process::exit(0);
+        }
+    }
 }
 
 #[derive(Debug, clap::Parser)]
@@ -424,33 +427,6 @@ fn get_config_path(cli_config: &str) -> Option<PathBuf> {
         if default_config.exists() {
             return Some(default_config);
         }
-    }
-
-    // If no config exists, create a default one in current directory
-    let default_content = r#"{
-    "Hexsaly": {
-        "style": true,
-        "menu": true,
-        "files": [
-            {
-                "title": "Example Patch",
-                "input": "input.exe",
-                "output": "patched.exe",
-                "patches": [
-                    {
-                        "offset": "0x1000",
-                        "hex_replace": "90 90 90"
-                    }
-                ]
-            }
-        ]
-    }
-}"#;
-
-    // Create default config file
-    if let Ok(_) = std::fs::write(&local_config, default_content) {
-        println!("{}", format!("Created default config.json in current directory.").blue());
-        return Some(local_config);
     }
 
     None
