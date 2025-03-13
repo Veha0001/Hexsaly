@@ -439,11 +439,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     colored::control::set_virtual_terminal(true).unwrap();
     // Parse command-line arguments for custom config file
     let args = Args::parse(); 
-    let config_path = get_config_path(&args.config)
-        .ok_or_else(|| io::Error::new(
-            io::ErrorKind::Other,
-            "Failed to create or find config file. Please ensure you have write permissions in the current directory."
-        ))?;
+    let config_path = get_config_path(&args.config).ok_or("Config file not found")?;
 
     // Validate and read the config file
     let config_metadata = std::fs::metadata(&config_path)?;
