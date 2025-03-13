@@ -385,13 +385,16 @@ fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
         format!("{}", title)
     }).collect();
 
-    let selection = Select::new("Select a file to patch:", options)
+    match Select::new("Select a file to patch:", options)
         .with_vim_mode(true)
         .raw_prompt()
-        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "Invalid selection"))?
-        .index;
-
-    Ok(selection)
+    {
+        Ok(selection) => Ok(selection.index),
+        Err(_) => {
+            println!("{}", "Operation cancelled by user.".yellow());
+            std::process::exit(0);
+        }
+    }
 }
 
 #[derive(Debug, clap::Parser)]
