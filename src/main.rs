@@ -408,29 +408,6 @@ struct Args {
   bypass_pause: bool,
 }
 
-fn get_config_path(cli_config: &str) -> Option<PathBuf> {
-    // First check if CLI provided path exists
-    let cli_path = PathBuf::from(cli_config);
-    if cli_path.exists() {
-        return Some(cli_path);
-    }
-
-    // Check ./config.json first
-    let local_config = PathBuf::from("config.json");
-    if local_config.exists() {
-        return Some(local_config);
-    }
-
-    // Then check config directory
-    if let Some(config_dir) = dirs::config_dir() {
-        let default_config = config_dir.join("hexsaly").join("config.json");
-        if default_config.exists() {
-            return Some(default_config);
-        }
-    }
-
-    None
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     windows_console::set_console_title("Hexsaly");
@@ -439,7 +416,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     colored::control::set_virtual_terminal(true).unwrap();
     // Parse command-line arguments for custom config file
     let args = Args::parse(); 
-    let config_path = get_config_path(&args.config).ok_or("Config file not found")?;
+    let config_path = if PathBuf::from(&args.config).exists() {
+        PathBuf::from(args.config)
+    } else if PathBuf::from("./config.json").exists() {
+        PathBuf::from("./config.json")
+    } else {
+        return Err(Box::new(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Could not find config.json in either specified path or current directory"
+        )));
+    };
 
     // Validate and read the config file
     let config_metadata = std::fs::metadata(&config_path)?;
