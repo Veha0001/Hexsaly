@@ -390,10 +390,10 @@ fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
         .raw_prompt()
     {
         Ok(selection) => Ok(selection.index),
-        Err(_) => {
-            println!("{}", "Operation cancelled by user.".yellow());
-            std::process::exit(0);
-        }
+        Err(_) => Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Invalid selection",
+        )),
     }
 }
 
