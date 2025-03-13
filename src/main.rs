@@ -4,7 +4,7 @@ use regex::Regex;
 use serde_json::Value;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
-use inquire::Select;
+use inquire::{Select,Confirm};
 use std::path::PathBuf;
 
 #[cfg(windows)]
@@ -407,8 +407,49 @@ struct Args {
   #[arg(short = 'k', long, help = "Bypass Pause")]
   bypass_pause: bool,
 }
+// Use Confrim to ask user if they want to create a new config file
+fn handel_config() -> Result<(), io::Error> {
+    let make_config = Confirm::new("No config file found. Would you like to create one?")
+        .with_default(false)
+        .prompt();
+    let default_config = r#"{
+    "Hexsaly": {
+        "files": [
+            {
+                "title": "Example File",
+                "input": "input.bin",
+                "output": "output.bin",
+                "patches": [
+                    {
+                        "offset": "0x1234",
+                        "hex_replace": "90 90 90 90 90 90"
+                    }
+                ]
+            }
+        ],
+        "style": true,
+        "menu": true
+    }
+}
+"#;
+    match make_config {
+        Ok(true) => {
+            let mut file = File::create("config.json")?;
+            file.write_all(default_config.as_bytes())?;
+            println!("{}", "Config file created as 'config.json'.".green());
+            Ok(())
+        }
+        Ok(false) => {
+            println!("{}", "No config file found. Exiting.".yellow());
+            std::process::exit(0);
+        }
+        Err(_) => {
+            println!("{}", "Failed to get user input. Exiting.".red());
+            std::process::exit(1);
+        }
+    }
 
-
+}
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     windows_console::set_console_title("Hexsaly");
     // Enable ANSI color codes on Windows
@@ -416,16 +457,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     colored::control::set_virtual_terminal(true).unwrap();
     // Parse command-line arguments for custom config file
     let args = Args::parse(); 
-    let config_path = if PathBuf::from(&args.config).exists() {
-        PathBuf::from(args.config)
-    } else if PathBuf::from("./config.json").exists() {
-        PathBuf::from("./config.json")
-    } else {
-        return Err(Box::new(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Could not find config.json in either specified path or current directory"
-        )));
-    };
+    // add handel config for config_path
+    let config_path = PathBuf::from(args.config);
+    if !config_path.exists() {
+        handel_config()?;
+    }
 
     // Validate and read the config file
     let config_metadata = std::fs::metadata(&config_path)?;
