@@ -1,11 +1,11 @@
 use colored::*;
 use clap::Parser;
 use regex::Regex;
-use serde_json::Value;
+use serde_json::{self, Value};
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use inquire::{Select,Confirm};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[cfg(windows)]
 mod windows_console {
@@ -408,7 +408,7 @@ struct Args {
   bypass_pause: bool,
 }
 // Use Confrim to ask user if they want to create a new config file
-fn handel_config() -> Result<(), io::Error> {
+fn handle_config() -> Result<(), io::Error> {
     let make_config = Confirm::new("No config file found. Would you like to create one?")
         .with_default(false)
         .prompt();
@@ -458,10 +458,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse command-line arguments for custom config file
     let args = Args::parse(); 
     // add handel config for config_path
-    let config_path = PathBuf::from(args.config);
-    if !config_path.exists() {
-        handel_config()?;
+    if !Path::new(&args.config).exists() {
+        handle_config()?;
     }
+    let config_path = PathBuf::from(&args.config);
 
     // Validate and read the config file
     let config_metadata = std::fs::metadata(&config_path)?;
