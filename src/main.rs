@@ -462,6 +462,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     let args = Args::parse();
     let config_path = PathBuf::from(&args.config);
+    
+    if !config_path.exists() {
+        eprintln!("{}", format!("Error: Config file '{}' not found", config_path.display()).red());
+        std::process::exit(1);
+    }
 
     let (files, log_style, use_menu) = read_config(&config_path)?;
 
