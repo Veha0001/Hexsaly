@@ -1,10 +1,10 @@
-use colored::*;
 use clap::Parser;
+use colored::*;
+use inquire::{Confirm, Select};
 use regex::Regex;
 use serde_json::{self, Value};
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
-use inquire::{Select,Confirm};
 use std::path::{Path, PathBuf};
 
 #[cfg(windows)]
@@ -50,7 +50,7 @@ mod windows_console {
 }
 
 fn replace_hex_at_offset(
-    data: &mut Vec<u8>,
+    data: &mut [u8],
     offset: usize,
     repl: &str,
     log_style: bool,
@@ -261,7 +261,7 @@ fn patch_code(
         }
     } else {
         // Try to create the output file to check if it's writable
-        let _ = OpenOptions::new().write(true).create(true).open(output)?;
+        let _ = OpenOptions::new().write(true).truncate(true).open(output)?;
     }
 
     // Open input file with read permissions
@@ -379,12 +379,15 @@ fn log_patch_done(output: &str, log_style: bool) {
 }
 
 fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
-    let options: Vec<String> = files.iter().map(|file_config| {
-        let input = file_config["input"].as_str().unwrap_or("Unknown");
-        let title = file_config["title"].as_str().unwrap_or(input);
-        format!("{}", title)
-    }).collect();
-    
+    let options: Vec<String> = files
+        .iter()
+        .map(|file_config| {
+            let input = file_config["input"].as_str().unwrap_or("Unknown");
+            let title = file_config["title"].as_str().unwrap_or(input);
+            title.to_string()
+        })
+        .collect();
+
     match Select::new("Select a file to patch:", options)
         .with_vim_mode(true)
         .raw_prompt()
@@ -398,14 +401,24 @@ fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
 }
 
 #[derive(Debug, clap::Parser)]
-#[command(name = "Hexsaly", about = "A tool to patch binary files based on a configuration file", version, author)]
+#[command(
+    name = "Hexsaly",
+    about = "A tool to patch binary files based on a configuration file",
+    version,
+    author
+)]
 struct Args {
-  #[arg(short, long, help = "Path to the config file", default_value = "config.json")]
-  config: String,
+    #[arg(
+        short,
+        long,
+        help = "Path to the config file",
+        default_value = "config.json"
+    )]
+    config: String,
 
-  #[cfg(windows)]
-  #[arg(short = 'k', long, help = "Bypass Pause")]
-  bypass_pause: bool,
+    #[cfg(windows)]
+    #[arg(short = 'k', long, help = "Bypass Pause")]
+    bypass_pause: bool,
 }
 // Use Confrim to ask user if they want to create a new config file
 fn handle_config() -> Result<(), io::Error> {
@@ -448,7 +461,6 @@ fn handle_config() -> Result<(), io::Error> {
             std::process::exit(1);
         }
     }
-
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     windows_console::set_console_title("Hexsaly");
@@ -456,7 +468,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
     // Parse command-line arguments for custom config file
-    let args = Args::parse(); 
+    let args = Args::parse();
     // add handel config for config_path
     if !Path::new(&args.config).exists() {
         handle_config()?;
@@ -521,3 +533,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     pause();
     Ok(())
 }
+
