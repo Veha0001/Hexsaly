@@ -422,12 +422,6 @@ struct Args {
 }
 
 fn read_config(config_path: &PathBuf) -> Result<(Vec<Value>, bool, bool), Box<dyn std::error::Error>> {
-    if !config_path.exists() {
-        return Err(Box::new(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Config file does not exist",
-        )));
-    }
     let config_metadata = std::fs::metadata(config_path)?;
     if config_metadata.len() > 10 * 1024 * 1024 {
         return Err(Box::new(io::Error::new(
