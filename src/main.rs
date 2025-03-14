@@ -378,7 +378,7 @@ fn log_patch_done(output: &str, log_style: bool) {
     }
 }
 
-fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
+fn display_menu(files: &[Value]) -> Result<usize, Box<dyn std::error::Error>> {
     let options: Vec<String> = files
         .iter()
         .map(|file_config| {
@@ -393,10 +393,7 @@ fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
         .raw_prompt()
     {
         Ok(selection) => Ok(selection.index),
-        Err(_) => {
-            println!("{}", "Operation cancelled by user.".yellow());
-            std::process::exit(0);
-        }
+        Err(_) => Err("Operation cancelled by user".into()),
     }
 }
 
@@ -421,10 +418,11 @@ struct Args {
     bypass_pause: bool,
 }
 // Use Confrim to ask user if they want to create a new config file
-fn handle_config() -> Result<(), io::Error> {
+fn handle_config() -> Result<(), Box<dyn std::error::Error>> {
     let make_config = Confirm::new("No config file found. Would you like to create one?")
         .with_default(false)
         .prompt();
+
     let default_config = r#"{
     "Hexsaly": {
         "files": [
@@ -443,8 +441,8 @@ fn handle_config() -> Result<(), io::Error> {
         "style": true,
         "menu": true
     }
-}
-"#;
+}"#;
+
     match make_config {
         Ok(true) => {
             let mut file = File::create("config.json")?;
@@ -452,16 +450,11 @@ fn handle_config() -> Result<(), io::Error> {
             println!("{}", "Config file created as 'config.json'.".green());
             Ok(())
         }
-        Ok(false) => {
-            println!("{}", "No config file found. Exiting.".yellow());
-            std::process::exit(0);
-        }
-        Err(_) => {
-            println!("{}", "Failed to get user input. Exiting.".red());
-            std::process::exit(1);
-        }
+        Ok(false) => Err("User declined to create config file".into()),
+        Err(_) => Err("Failed to get user input".into()),
     }
 }
+
 fn read_config(config_path: &PathBuf) -> Result<(Vec<Value>, bool, bool), Box<dyn std::error::Error>> {
     let config_metadata = std::fs::metadata(config_path)?;
     if config_metadata.len() > 10 * 1024 * 1024 {
@@ -542,4 +535,3 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     pause();
     Ok(())
 }
-
