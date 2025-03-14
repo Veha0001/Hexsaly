@@ -5,7 +5,7 @@ use regex::Regex;
 use serde_json::{self, Value};
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[cfg(windows)]
 mod windows_console {
@@ -16,7 +16,7 @@ mod windows_console {
     pub fn set_console_title(title: &str) {
         let wide: Vec<u16> = OsStr::new(title)
             .encode_wide()
-            .chain(Some(0).into_iter())
+            .chain(Some(0))
             .collect();
         unsafe {
             SetConsoleTitleW(wide.as_ptr());
@@ -462,21 +462,8 @@ fn handle_config() -> Result<(), io::Error> {
         }
     }
 }
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    windows_console::set_console_title("Hexsaly");
-    // Enable ANSI color codes on Windows
-    #[cfg(windows)]
-    colored::control::set_virtual_terminal(true).unwrap();
-    // Parse command-line arguments for custom config file
-    let args = Args::parse();
-    // add handel config for config_path
-    if !Path::new(&args.config).exists() {
-        handle_config()?;
-    }
-    let config_path = PathBuf::from(&args.config);
-
-    // Validate and read the config file
-    let config_metadata = std::fs::metadata(&config_path)?;
+fn read_config(config_path: &PathBuf) -> Result<(Vec<Value>, bool, bool), Box<dyn std::error::Error>> {
+    let config_metadata = std::fs::metadata(config_path)?;
     if config_metadata.len() > 10 * 1024 * 1024 {
         return Err(Box::new(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -488,7 +475,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reader = BufReader::new(file);
     let config: Value = serde_json::from_reader(reader)?;
 
-    // Validate the JSON structure
     if !config.is_object()
         || !config["Hexsaly"].is_object()
         || !config["Hexsaly"]["files"].is_array()
@@ -501,15 +487,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let files = config["Hexsaly"]["files"]
         .as_array()
-        .ok_or("Missing files in config")?;
+        .ok_or("Missing files in config")?
+        .clone();
     let log_style = config["Hexsaly"]["style"].as_bool().unwrap_or(true);
     let use_menu = config["Hexsaly"]["menu"].as_bool().unwrap_or(false);
 
+    Ok((files, log_style, use_menu))
+}
+
+fn get_config_path(args: &Args) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    let config_path = PathBuf::from(&args.config);
+    if !config_path.exists() {
+        handle_config()?;
+    }
+    Ok(config_path)
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    windows_console::set_console_title("Hexsaly");
+    // Enable ANSI color codes on Windows
+    #[cfg(windows)]
+    colored::control::set_virtual_terminal(true).unwrap();
+    
+    let args = Args::parse();
+    let config_path = get_config_path(&args)?;
+
+    let (files, log_style, use_menu) = read_config(&config_path)?;
+
     let file_configs = if use_menu {
-        let selected_index = display_menu(files)?;
+        let selected_index = display_menu(&files)?;
         vec![files[selected_index].clone()]
     } else {
-        files.clone()
+        files
     };
 
     for file_config in file_configs {
