@@ -453,7 +453,7 @@ fn handle_config() -> Result<(), io::Error> {
             Ok(())
         }
         Ok(false) => {
-            println!("{}", "No config file found. Exiting.".yellow());
+            println!("{}", "Exiting.".yellow());
             std::process::exit(0);
         }
         Err(_) => {
@@ -498,7 +498,6 @@ fn read_config(config_path: &PathBuf) -> Result<(Vec<Value>, bool, bool), Box<dy
 fn get_config_path(args: &Args) -> Result<PathBuf, Box<dyn std::error::Error>> {
     let config_path = PathBuf::from(&args.config);
     if !config_path.exists() {
-        println!("Config file not found at '{}'.", config_path.to_string_lossy());
         handle_config()?;
     }
     Ok(config_path)
@@ -511,6 +510,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     colored::control::set_virtual_terminal(true).unwrap();
     
     let args = Args::parse();
+    if args.config == "config.json" {
+        println!("{}", "Using default config file 'config.json'.".blue());
+    }
     let config_path = get_config_path(&args)?;
 
     let (files, log_style, use_menu) = read_config(&config_path)?;
