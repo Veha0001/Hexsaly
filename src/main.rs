@@ -261,7 +261,7 @@ fn patch_code(
         }
     } else {
         // Try to create the output file to check if it's writable
-        let _ = OpenOptions::new().write(true).truncate(true).open(output)?;
+        let _ = OpenOptions::new().write(true).create(true).truncate(true).open(output)?;
     }
 
     // Open input file with read permissions
@@ -403,7 +403,7 @@ fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
 #[derive(Debug, clap::Parser)]
 #[command(
     name = "Hexsaly",
-    about = "A tool to patch binary files based on a configuration file",
+    about = "A tool to patch binary files based on a configuration file. Made by Veha0001.",
     version,
     author
 )]
@@ -465,6 +465,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     if !config_path.exists() {
         eprintln!("{}", format!("Error: Config file '{}' not found", config_path.display()).red());
+        eprintln!("{}", "Please make sure the config file exists and try again.".yellow());
+        eprintln!("{}", "For help, use the --help flag. and ".blue());
         std::process::exit(1);
     }
 
