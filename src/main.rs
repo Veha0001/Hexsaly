@@ -465,8 +465,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     if !config_path.exists() {
         eprintln!("{}", format!("Error: Config file '{}' not found", config_path.display()).red());
-        eprintln!("{}", "Please make sure the config file exists and try again.".yellow());
-        eprintln!("{}", "For help, use the --help flag. and ".blue());
         std::process::exit(1);
     }
 
