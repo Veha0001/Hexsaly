@@ -1,13 +1,16 @@
 name: CI
 
-on: [ push , pull_request ]
+on: [push, pull_request]
 
 permissions:
   contents: write
 
 jobs:
-  windows-build:
-    runs-on: windows-latest
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,26 +22,28 @@ jobs:
             ~/.cargo
             ~/.rustup
             target
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-${{ matrix.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Rust
-        shell: pwsh
         run: |
           rustup default stable
           rustc -vV
           cargo -vV
 
       - name: Build
-        shell: pwsh
         run: cargo build --release
+
+      - name: Rename artifact if Linux
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: mv target/release/hexsaly target/release/hexsaly.bin
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: Hexsaly
-          path: target/release/hexsaly.exe
+          path: target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
           if-no-files-found: error
-          
+
       - name: Release
         if: ${{ github.event_name == 'push' }}
         uses: softprops/action-gh-release@v2.2.1
@@ -46,4 +51,4 @@ jobs:
           generate_release_notes: true
           name: Hexsaly
           tag_name: latest-nightly
-          files: target/release/hexsaly.exe
+          files: target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
