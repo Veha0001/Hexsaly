@@ -41,7 +41,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hexsaly ${{ matrix.os }}
+          name: Hexsaly-${{ matrix.os }}
           path: target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
           if-no-files-found: error
 
@@ -52,10 +52,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download artifact
+      - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: Hexsaly
+          name: Hexsaly-ubuntu-latest
+          path: ./target/release
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Hexsaly-windows-latest
           path: ./target/release
 
       - name: Nightly Release
@@ -64,13 +70,15 @@ jobs:
         with:
           name: Hexsaly
           tag_name: latest-nightly
-          files: ./target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
+          files: |
+            ./target/release/hexsaly.bin
+            ./target/release/hexsaly.exe
           body: |
             # Nightly version
             **Full Changelog**: [View commit](https://github.com/Veha0001/Hexsaly/commits/main)
             - Please use this program safely.
             
             ## Builds
-            [![Runner](https://img.shields.io/badge/Build-Action-black?style=for-the-badge&logo=rust&logoColor=%23eff1f5&labelColor=%2340a02b&color=%235c5f77)](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            [![Runner](https://img.shields.io/badge/Build-Action-black?style=for-the-badge&logo=rust&logoColor=%23eff1f5&labelColor=%2340a02b&color=%235c5f77)](${{ github.server_url }}/${{ github.repository }})
             - **hexsaly.bin**: Linux x86_64.
             - **hexsaly.exe**: Windows x86_64.
