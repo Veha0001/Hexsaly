@@ -40,7 +40,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hexsaly
+          name: Hexsaly ${{ matrix.os }}
           path: target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
           if-no-files-found: error
 
