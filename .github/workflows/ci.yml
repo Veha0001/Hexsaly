@@ -31,12 +31,13 @@ jobs:
           cargo -vV
 
       - name: Build
-        run: cargo build --release
-
-      - name: Rename artifact if Linux
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: mv target/release/hexsaly target/release/hexsaly.bin
-
+        shell: bash
+        run: |
+          cargo build --release
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            mv target/release/hexsaly target/release/hexsaly.bin
+          fi
+          
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -44,11 +45,32 @@ jobs:
           path: target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
           if-no-files-found: error
 
-      - name: Release
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Hexsaly
+          path: ./target/release
+
+      - name: Nightly Release
         if: ${{ github.event_name == 'push' }}
         uses: softprops/action-gh-release@v2.2.1
         with:
-          generate_release_notes: true
           name: Hexsaly
           tag_name: latest-nightly
-          files: target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
+          files: ./target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
+          body: |
+            # Nightly version
+            **Full Changelog**: [View commit](https://github.com/Veha0001/Hexsaly/commits/main)
+            - Please use this program safely.
+            
+            ## Builds
+            [![Runner](https://img.shields.io/badge/Build-Action-black?style=for-the-badge&logo=rust&logoColor=%23eff1f5&labelColor=%2340a02b&color=%235c5f77)](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - **hexsaly.bin**: Linux x86_64.
+            - **hexsaly.exe**: Windows x86_64.
