@@ -25,6 +25,7 @@ jobs:
           key: cargo-${{ matrix.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Rust
+        shell: bash
         run: |
           rustup default stable
           rustc -vV
@@ -33,9 +34,11 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          cargo build --release
           if [[ "$RUNNER_OS" == "Linux" ]]; then
+            cargo build --release 
             mv target/release/hexsaly target/release/hexsaly.bin
+          else
+            cargo build --release --target=x86_64-pc-windows-gnu
           fi
           
       - name: Upload artifact
