@@ -27,7 +27,11 @@ jobs:
       - name: Setup Rust
         shell: bash
         run: |
-          rustup default stable
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            rustup default stable
+          else
+            rustup default stable-x86_64-pc-windows-gnu
+          fi
           rustc -vV
           cargo -vV
 
