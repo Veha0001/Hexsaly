@@ -5,6 +5,7 @@ use regex::Regex;
 use serde_json::{self, Value};
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
+use std::ops::Not;
 use std::path::PathBuf;
 
 #[cfg(windows)]
@@ -510,24 +511,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = Args::parse();
     let config_path = PathBuf::from(&args.config);
+
     if args.example_config {
         return print_an_example_config();
     }
 
     if !config_path.exists() {
-        println!(
-            "{}",
-            "There isn't a config file, please create one.".yellow()
-        );
-        println!("use --example-config to create a example config file.");
-        println!("for more information use --help.\n ");
+        println!("{}", "Config file not found.".yellow());
+        println!("Use --example-config to generate a sample config file.");
+        println!("For more details, run with --help.\n");
+
         eprintln!(
             "{}",
-            format!("Error: Config file '{}' not found", config_path.display()).red()
+            format!("Error: Could not locate '{}'", config_path.display()).red()
         );
-        std::process::exit(1);
+        std::process::exit(0);
     }
-
     let (files, log_style, use_menu) = read_config(&config_path)?;
 
     let file_configs = if use_menu {
