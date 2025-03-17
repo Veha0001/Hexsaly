@@ -1,7 +1,6 @@
 use clap::Parser;
 use colored::*;
 use crossterm::{self, execute, terminal};
-use crossterm::event::{read, Event};
 use inquire::Select;
 use regex::Regex;
 use serde_json::{self, Value};
@@ -10,24 +9,19 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 
 #[cfg(windows)]
 fn pause() {
-    if Args::parse().bypass_pause {
+    if Args::parse().no_pause {
         return;
     }
-    loop {
-        match read().unwrap() {
-            Event::Key(_event) => break,
-            _ => continue,
-        }
-    }
-    // let mut stdin = io::stdin();
-    // let mut stdout = io::stdout();
+ 
+    let mut stdin = io::stdin();
+    let mut stdout = io::stdout();
 
-    // // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
-    // write!(stdout, "Press any key to continue...").unwrap();
-    // stdout.flush().unwrap();
+    // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+    write!(stdout, "Press any key to continue...").unwrap();
+    stdout.flush().unwrap();
 
-    // // Read a single byte and discard
-    // let _ = stdin.read(&mut [0u8]).unwrap();
+    // Read a single byte and discard
+    let _ = stdin.read(&mut [0u8]).unwrap();
     
 }
 #[cfg(not(windows))]
@@ -416,8 +410,8 @@ struct Args {
     example_config: bool,
 
     #[cfg(windows)]
-    #[arg(short = 'k', long, help = "Bypass Pause")]
-    bypass_pause: bool,
+    #[arg(short = 'k', long, help = "No Pause")]
+    no_pause: bool,
 }
 
 fn read_config(
@@ -504,8 +498,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return print_an_example_config();
     }
 
-    let config_file = OpenOptions::new().read(true).open(&args.config);
-    if config_file.is_err() {
+    if !std::path::Path::new(&args.config).exists() {
         eprintln!("{}", "Error: Config file not found.\n ".red());
         println!("Use --example-config to generate a sample config file.");
         println!("For more details, run with --help.\n");
