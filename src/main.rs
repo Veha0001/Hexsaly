@@ -12,7 +12,7 @@ fn pause() {
     if Args::parse().no_pause {
         return;
     }
- 
+
     let mut stdin = io::stdin();
     let mut stdout = io::stdout();
 
@@ -22,11 +22,10 @@ fn pause() {
 
     // Read a single byte and discard
     let _ = stdin.read(&mut [0u8]).unwrap();
-    
 }
 #[cfg(not(windows))]
 fn pause() {
-    
+
     // No-op on non-Windows platforms
 }
 
@@ -487,7 +486,7 @@ fn print_an_example_config() -> Result<(), Box<dyn std::error::Error>> {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Terminal
     execute!(io::stdout(), terminal::SetTitle("Hexsaly")).unwrap();
-    
+
     // Enable ANSI color codes on Windows
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
