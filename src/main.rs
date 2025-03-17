@@ -510,11 +510,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = Args::parse();
     let config_path = PathBuf::from(&args.config);
-    let config_path = if config_path.is_absolute() {
-        config_path
-    } else {
-        std::env::current_exe()?.with_file_name(&args.config)
-    };
 
     if args.example_config {
         return print_an_example_config();
