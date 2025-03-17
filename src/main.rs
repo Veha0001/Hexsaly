@@ -510,17 +510,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = Args::parse();
     let config_path = PathBuf::from(&args.config);
+    let config_path = if config_path.is_absolute() {
+        config_path
+    } else {
+        std::env::current_exe()?.with_file_name(&args.config)
+    };
 
     if args.example_config {
         return print_an_example_config();
     }
 
     if !config_path.exists() {
-        println!("{}", "Config file not found.".yellow());
+        println!("{}", "The config file must be named 'config.json' and placed in the same directory as the executable.".yellow());
         println!("Use --example-config to generate a sample config file.");
         println!("For more details, run with --help.\n");
-        return Err(format!("Config file not found: '{}'", config_path.display()).into());
+
+        eprintln!("{}", "Error: Config file not found.".red());
+        std::process::exit(1);
     }
+
     let (files, log_style, use_menu) = read_config(&config_path)?;
 
     let file_configs = if use_menu {
