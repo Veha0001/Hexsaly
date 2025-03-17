@@ -1,5 +1,6 @@
 use clap::Parser;
 use colored::*;
+use crossterm::{self, execute, terminal};
 use inquire::Select;
 use regex::Regex;
 use serde_json::{self, Value};
@@ -7,19 +8,6 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::path::PathBuf;
 
-#[cfg(windows)]
-mod windows_console {
-    use std::ffi::OsStr;
-    use std::os::windows::ffi::OsStrExt;
-    use winapi::um::wincon::SetConsoleTitleW;
-
-    pub fn set_console_title(title: &str) {
-        let wide: Vec<u16> = OsStr::new(title).encode_wide().chain(Some(0)).collect();
-        unsafe {
-            SetConsoleTitleW(wide.as_ptr());
-        }
-    }
-}
 #[cfg(windows)]
 fn pause() {
     if Args::parse().bypass_pause {
@@ -38,12 +26,6 @@ fn pause() {
 #[cfg(not(windows))]
 fn pause() {
     // No-op on non-Windows platforms
-}
-#[cfg(not(windows))]
-mod windows_console {
-    pub fn set_console_title(_title: &str) {
-        // No-op on non-Windows platforms
-    }
 }
 
 fn replace_hex_at_offset(
@@ -503,7 +485,9 @@ fn print_an_example_config() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    windows_console::set_console_title("Hexsaly");
+    // Terminal initialization
+    execute!(io::stdout(), terminal::SetTitle("Hexsaly")).unwrap();
+
     // Enable ANSI color codes on Windows
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
