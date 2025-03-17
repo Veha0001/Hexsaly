@@ -14,10 +14,7 @@ mod windows_console {
     use winapi::um::wincon::SetConsoleTitleW;
 
     pub fn set_console_title(title: &str) {
-        let wide: Vec<u16> = OsStr::new(title)
-            .encode_wide()
-            .chain(Some(0))
-            .collect();
+        let wide: Vec<u16> = OsStr::new(title).encode_wide().chain(Some(0)).collect();
         unsafe {
             SetConsoleTitleW(wide.as_ptr());
         }
@@ -261,7 +258,11 @@ fn patch_code(
         }
     } else {
         // Try to create the output file to check if it's writable
-        let _ = OpenOptions::new().write(true).create(true).truncate(true).open(output)?;
+        let _ = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(output)?;
     }
 
     // Open input file with read permissions
@@ -403,7 +404,7 @@ fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
 #[derive(Debug, clap::Parser)]
 #[command(
     name = "Hexsaly",
-    about = "A tool to patch binary files based on a configuration file. Made by Veha0001.",
+    about = "A tool to patch binary files based on a configuration file.\nMade by Veha0001.",
     version,
     author
 )]
@@ -416,12 +417,22 @@ struct Args {
     )]
     config: String,
 
+    #[arg(
+        short = 'e',
+        long = "example-config",
+        help = "Print an example config file",
+        conflicts_with = "config"
+    )]
+    example_config: bool,
+
     #[cfg(windows)]
     #[arg(short = 'k', long, help = "Bypass Pause")]
     bypass_pause: bool,
 }
 
-fn read_config(config_path: &PathBuf) -> Result<(Vec<Value>, bool, bool), Box<dyn std::error::Error>> {
+fn read_config(
+    config_path: &PathBuf,
+) -> Result<(Vec<Value>, bool, bool), Box<dyn std::error::Error>> {
     let config_metadata = std::fs::metadata(config_path)?;
     if config_metadata.len() > 10 * 1024 * 1024 {
         return Err(Box::new(io::Error::new(
@@ -454,17 +465,66 @@ fn read_config(config_path: &PathBuf) -> Result<(Vec<Value>, bool, bool), Box<dy
     Ok((files, log_style, use_menu))
 }
 
+fn print_an_example_config() -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        r#"{
+    "Hexsaly": {
+        "style": true,
+        "menu": false,
+        "files": [
+            {
+                "title": "Example File",
+                "input": "example.bin",
+                "output": "example_patched.bin",
+                "patches": [
+                    {
+                        "method_name": "ExampleMethodNameFromIl2cpp_dump.cs",
+                        "hex_replace": "90 90 90 90 90"
+                    },
+                    {
+                        "wildcard": "90 ?? 90 90",
+                        "hex_replace": "90 90 90 90"
+                    },
+                    {
+                        "offset": "0x1234",
+                        "hex_insert": "90 90 90 90"
+                    }
+                ],
+                "dump_cs": "dump.cs",
+                "require": false
+            }
+        ]
+    }
+}"#
+        .green()
+    );
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     windows_console::set_console_title("Hexsaly");
     // Enable ANSI color codes on Windows
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
-    
+
     let args = Args::parse();
     let config_path = PathBuf::from(&args.config);
-    
+    if args.example_config {
+        return print_an_example_config();
+    }
+
     if !config_path.exists() {
-        eprintln!("{}", format!("Error: Config file '{}' not found", config_path.display()).red());
+        println!(
+            "{}",
+            "There isn't a config file, please create one.".yellow()
+        );
+        println!("use --example-config to create a example config file.");
+        println!("for more information use --help.\n ");
+        eprintln!(
+            "{}",
+            format!("Error: Config file '{}' not found", config_path.display()).red()
+        );
         std::process::exit(1);
     }
 
