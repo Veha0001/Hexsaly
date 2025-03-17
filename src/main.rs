@@ -1,6 +1,7 @@
 use clap::Parser;
 use colored::*;
 use crossterm::{self, execute, terminal};
+use crossterm::event::{read, Event};
 use inquire::Select;
 use regex::Regex;
 use serde_json::{self, Value};
@@ -12,18 +13,26 @@ fn pause() {
     if Args::parse().bypass_pause {
         return;
     }
-    let mut stdin = io::stdin();
-    let mut stdout = io::stdout();
+    loop {
+        match read().unwrap() {
+            Event::Key(_event) => break,
+            _ => continue,
+        }
+    }
+    // let mut stdin = io::stdin();
+    // let mut stdout = io::stdout();
 
-    // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
-    write!(stdout, "Press any key to continue...").unwrap();
-    stdout.flush().unwrap();
+    // // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+    // write!(stdout, "Press any key to continue...").unwrap();
+    // stdout.flush().unwrap();
 
-    // Read a single byte and discard
-    let _ = stdin.read(&mut [0u8]).unwrap();
+    // // Read a single byte and discard
+    // let _ = stdin.read(&mut [0u8]).unwrap();
+    
 }
 #[cfg(not(windows))]
 fn pause() {
+    
     // No-op on non-Windows platforms
 }
 
@@ -482,9 +491,9 @@ fn print_an_example_config() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Terminal initialization
+    // Terminal
     execute!(io::stdout(), terminal::SetTitle("Hexsaly")).unwrap();
-
+    
     // Enable ANSI color codes on Windows
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
@@ -495,13 +504,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return print_an_example_config();
     }
 
-    // let config_file = OpenOptions::new().read(true).open(&args.config);
-    // if config_file.is_err() {
-    //     println!("{}", "Error: Config file not found.\n ".red());
-    //     println!("Use --example-config to generate a sample config file.");
-    //     println!("For more details, run with --help.\n");
-    //     std::process::exit(2);
-    // }
+    let config_file = OpenOptions::new().read(true).open(&args.config);
+    if config_file.is_err() {
+        eprintln!("{}", "Error: Config file not found.\n ".red());
+        println!("Use --example-config to generate a sample config file.");
+        println!("For more details, run with --help.\n");
+        pause();
+        return Ok(());
+    }
 
     let config_path = std::fs::canonicalize(&args.config)?;
 
