@@ -495,13 +495,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return print_an_example_config();
     }
 
-    let config_file = OpenOptions::new().read(true).open(&args.config);
-    if config_file.is_err() {
-        println!("{}", "Error: Config file not found.\n ".red());
-        println!("Use --example-config to generate a sample config file.");
-        println!("For more details, run with --help.\n");
-        std::process::exit(2);
-    }
+    // let config_file = OpenOptions::new().read(true).open(&args.config);
+    // if config_file.is_err() {
+    //     println!("{}", "Error: Config file not found.\n ".red());
+    //     println!("Use --example-config to generate a sample config file.");
+    //     println!("For more details, run with --help.\n");
+    //     std::process::exit(2);
+    // }
 
     let config_path = std::fs::canonicalize(&args.config)?;
 
