@@ -31,16 +31,14 @@ jobs:
           rustc -vV
           cargo -vV
 
-      - uses: ilammy/msvc-dev-cmd@v1
-      
       - name: Build
         shell: bash
         run: |
-          if [[ "${{ runner.os }}" == "Linux" ]]; then
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            cargo build --release 
+          else
             cargo build --release 
             mv target/release/hexsaly target/release/hexsaly.bin
-          else
-            cargo build --release
           fi
           
       - name: Upload artifact
