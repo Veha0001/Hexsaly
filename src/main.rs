@@ -6,7 +6,6 @@ use regex::Regex;
 use serde_json::{self, Value};
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
-use std::path::PathBuf;
 
 #[cfg(windows)]
 fn pause() {
@@ -413,7 +412,7 @@ struct Args {
 }
 
 fn read_config(
-    config_path: &PathBuf,
+    config_path: &std::path::Path,
 ) -> Result<(Vec<Value>, bool, bool), Box<dyn std::error::Error>> {
     let config_metadata = std::fs::metadata(config_path)?;
     if config_metadata.len() > 10 * 1024 * 1024 {
@@ -448,9 +447,7 @@ fn read_config(
 }
 
 fn print_an_example_config() -> Result<(), Box<dyn std::error::Error>> {
-    println!(
-        "{}",
-        r#"{
+    let example_config = r#"{
     "Hexsaly": {
         "style": true,
         "menu": false,
@@ -478,9 +475,9 @@ fn print_an_example_config() -> Result<(), Box<dyn std::error::Error>> {
             }
         ]
     }
-}"#
-        .green()
-    );
+}"#;
+
+    println!("{}", example_config.green());
     Ok(())
 }
 
@@ -493,20 +490,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     colored::control::set_virtual_terminal(true).unwrap();
 
     let args = Args::parse();
-    let config_path = PathBuf::from(&args.config);
 
     if args.example_config {
         return print_an_example_config();
     }
 
-    if !config_path.exists() {
-        println!("{}", "The config file must be named 'config.json' and placed in the same directory as the executable.".yellow());
+    let config_file = OpenOptions::new().read(true).open(&args.config);
+    if config_file.is_err() {
+        println!("{}", "Error: Config file not found.\n ".red());
         println!("Use --example-config to generate a sample config file.");
         println!("For more details, run with --help.\n");
-
-        eprintln!("{}", "Error: Config file not found.".red());
-        std::process::exit(1);
+        std::process::exit(2);
     }
+
+    let config_path = std::fs::canonicalize(&args.config)?;
 
     let (files, log_style, use_menu) = read_config(&config_path)?;
 
