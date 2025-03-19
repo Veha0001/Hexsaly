@@ -4,9 +4,9 @@ use crossterm::{self, execute, terminal};
 use inquire::Select;
 use regex::Regex;
 use serde_json::{self, Value};
-use std::fs::{File, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 #[cfg(windows)]
 fn pause() {
     if Args::parse().no_pause {
@@ -222,7 +222,7 @@ fn patch_code(
             format!("Input file '{}' does not exist", input),
         ));
     }
-    let input_metadata = std::fs::metadata(input)?;
+    let input_metadata = fs::metadata(input)?;
     if input_metadata.permissions().readonly() {
         return Err(io::Error::new(
             io::ErrorKind::PermissionDenied,
@@ -232,7 +232,7 @@ fn patch_code(
 
     // Check if output file is writable
     if std::path::Path::new(output).exists() {
-        let output_metadata = std::fs::metadata(output)?;
+        let output_metadata = fs::metadata(output)?;
         if output_metadata.permissions().readonly() {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
@@ -413,10 +413,8 @@ struct Args {
     no_pause: bool,
 }
 
-fn read_config(
-    config_path: &Path,
-) -> Result<(Vec<Value>, bool, bool), Box<dyn std::error::Error>> {
-    let config_metadata = std::fs::metadata(config_path)?;
+fn read_config(config_path: &Path) -> Result<(Vec<Value>, bool, bool), Box<dyn std::error::Error>> {
+    let config_metadata = fs::metadata(config_path)?;
     if config_metadata.len() > 10 * 1024 * 1024 {
         return Err(Box::new(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -497,8 +495,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return print_an_example_config();
     }
 
-    let config_path = PathBuf::from(args.config);
-    if !config_path.exists() {
+    if !Path::new(&args.config).exists() {
         eprintln!("{}", "Error: Config file not found.\n ".red());
         println!("Use --example-config to generate a sample config file.");
         println!("For more details, run with --help.\n");
@@ -506,6 +503,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    let config_path = fs::canonicalize(&args.config)?;
     let (files, log_style, use_menu) = read_config(&config_path)?;
 
     let file_configs = if use_menu {
