@@ -6,7 +6,7 @@ use regex::Regex;
 use serde_json::{self, Value};
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
-
+use std::path::{Path, PathBuf};
 #[cfg(windows)]
 fn pause() {
     if Args::parse().no_pause {
@@ -414,7 +414,7 @@ struct Args {
 }
 
 fn read_config(
-    config_path: &std::path::Path,
+    config_path: &Path,
 ) -> Result<(Vec<Value>, bool, bool), Box<dyn std::error::Error>> {
     let config_metadata = std::fs::metadata(config_path)?;
     if config_metadata.len() > 10 * 1024 * 1024 {
@@ -497,15 +497,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return print_an_example_config();
     }
 
-    if !std::path::Path::new(&args.config).exists() {
+    let config_path = PathBuf::from(args.config);
+    if !config_path.exists() {
         eprintln!("{}", "Error: Config file not found.\n ".red());
         println!("Use --example-config to generate a sample config file.");
         println!("For more details, run with --help.\n");
         pause();
         return Ok(());
     }
-
-    let config_path = std::fs::canonicalize(&args.config)?;
 
     let (files, log_style, use_menu) = read_config(&config_path)?;
 
