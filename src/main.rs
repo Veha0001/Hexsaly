@@ -500,7 +500,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Use --example-config to generate a sample config file.");
         println!("For more details, run with --help.\n");
         pause();
-        return Ok(());
+        std::process::exit(1);
     }
 
     let config_path = fs::canonicalize(&args.config)?;
