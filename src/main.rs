@@ -255,7 +255,7 @@ fn patch_code(
 
     for patch in patch_list.as_array().unwrap() {
         if !validate_patch_structure(patch, log_style) {
-            continue;
+            return Ok(());
         }
 
         let offset = if let Some(method_name) = patch.get("method_name") {
@@ -445,7 +445,7 @@ fn read_config(config_path: &Path) -> Result<(Vec<Value>, bool, bool), Box<dyn s
         .ok_or("Missing files in config")?
         .clone();
     let log_style = config["Hexsaly"]["style"].as_bool().unwrap_or(true);
-    let use_menu = config["Hexsaly"]["menu"].as_bool().unwrap_or(false);
+    let use_menu = config["Hexsaly"]["menu"].as_bool().unwrap_or(true);
 
     Ok((files, log_style, use_menu))
 }
@@ -463,7 +463,7 @@ fn print_an_example_config() -> Result<(), Box<dyn std::error::Error>> {
                 "patches": [
                     {
                         "method_name": "ExampleMethodNameFromIl2cpp_dump.cs",
-                        "hex_replace": "90 90 90 90 90"
+                        "hex_insert": "90 90 90 90 90"
                     },
                     {
                         "wildcard": "90 ?? 90 90",
@@ -507,25 +507,12 @@ fn validate_patch_structure(patch: &Value, log_style: bool) -> bool {
 
     if read_count != 1 || hex_count != 1 {
         if log_style {
-            println!(
-                "{}",
-                format!(
-                    "[ERROR] Invalid patch structure. Must have exactly one read method and one hex method."
-                )
-                .red()
-            );
+            println!("{}","[ERROR] Invalid patch structure. Must have exactly two things: offset/wildcard/method_name and hex_replace/hex_insert.".red());
         } else {
-            println!(
-                "{}",
-                format!(
-                    "Error: Invalid patch structure. Must have exactly one read method and one hex method."
-                )
-                .red()
-            );
+            println!("{}","Error: Invalid patch structure. Must have exactly two things: offset/wildcard/method_name and hex_replace/hex_insert.".red());
         }
         return false;
     }
-
     true
 }
 
@@ -548,7 +535,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Use --example-config to generate a sample config file.");
         println!("For more details, run with --help.\n");
         pause();
-        std::process::exit(1);
+        return Ok(());
     }
 
     let config_path = fs::canonicalize(&args.config)?;
