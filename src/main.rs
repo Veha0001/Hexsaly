@@ -254,6 +254,10 @@ fn patch_code(
     input_file.read_to_end(&mut data)?;
 
     for patch in patch_list.as_array().unwrap() {
+        if !validate_patch_structure(patch, log_style) {
+            continue;
+        }
+
         let offset = if let Some(method_name) = patch.get("method_name") {
             if let Some(dump_path) = dump_path {
                 if let Some(offset) =
@@ -479,6 +483,50 @@ fn print_an_example_config() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("{}", example_config.green());
     Ok(())
+}
+
+fn validate_patch_structure(patch: &Value, log_style: bool) -> bool {
+    // Count the number of read methods (offset, wildcard, method_name)
+    let read_count = [
+        patch.get("offset").is_some(),
+        patch.get("wildcard").is_some(),
+        patch.get("method_name").is_some(),
+    ]
+    .iter()
+    .filter(|&&x| x)
+    .count();
+
+    // Count the number of hex methods (hex_replace, hex_insert)
+    let hex_count = [
+        patch.get("hex_replace").is_some(),
+        patch.get("hex_insert").is_some(),
+    ]
+    .iter()
+    .filter(|&&x| x)
+    .count();
+
+    if read_count != 1 || hex_count != 1 {
+        if log_style {
+            println!(
+                "{}",
+                format!(
+                    "[ERROR] Invalid patch structure. Must have exactly one read method and one hex method."
+                )
+                .red()
+            );
+        } else {
+            println!(
+                "{}",
+                format!(
+                    "Error: Invalid patch structure. Must have exactly one read method and one hex method."
+                )
+                .red()
+            );
+        }
+        return false;
+    }
+
+    true
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
