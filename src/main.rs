@@ -1,5 +1,5 @@
 use crossterm::{self, execute, terminal};
-use hexsaly::cli::cli;
+use hexsaly::cli::hexsaly;
 use std::io;
 
 fn main() {
@@ -9,5 +9,5 @@ fn main() {
     // Enable ANSI color codes on Windows
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
-    cli::run().unwrap();
+    hexsaly::run().unwrap();
 }

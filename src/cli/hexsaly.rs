@@ -4,22 +4,23 @@ use crate::func::header::*;
 use clap::Parser;
 use colored::*;
 use std::fs;
-use std::io::{self, Read, Write};
 #[cfg(windows)]
 pub fn pause() {
+    use crossterm::event::{read, Event, KeyCode};
+    use std::io::{self, Write};
     if Args::parse().no_pause {
         return;
     }
-
-    let mut stdin = io::stdin();
     let mut stdout = io::stdout();
-
-    // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
-    write!(stdout, "Press any key to continue...").unwrap();
+    write!(stdout, "Press Enter to continue...").unwrap();
     stdout.flush().unwrap();
-
-    // Read a single byte and discard
-    let _ = stdin.read(&mut [0u8]).unwrap();
+    loop {
+        if let Ok(Event::Key(event)) = read() {
+            if event.code == KeyCode::Enter {
+                break;
+            }
+        }
+    }
 }
 #[cfg(not(windows))]
 pub fn pause() {
@@ -34,7 +35,12 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         return print_an_example_config();
     }
 
-    if !args.config.as_ref().expect("Config path is not set").exists() {
+    if !args
+        .config
+        .as_ref()
+        .expect("Config path is not set")
+        .exists()
+    {
         eprintln!("{}", "Error: Config file not found.\n ".red());
         println!("Use --example-config to generate a sample config file.");
         println!("For more details, run with --help.\n");

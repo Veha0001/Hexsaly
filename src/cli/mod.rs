@@ -1,3 +1,3 @@
 pub mod args;
-pub mod cli;
+pub mod hexsaly;
 pub mod patch;
