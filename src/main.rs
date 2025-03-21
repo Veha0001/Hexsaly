@@ -1,5 +1,5 @@
 use crossterm::{self, execute, terminal};
-use hexsaly::app::cli;
+use hexsaly::cli::cli;
 use std::io;
 
 fn main() {

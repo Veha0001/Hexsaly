@@ -1,11 +1,10 @@
-use crate::app::args::Args;
-use crate::app::patch::*;
+use crate::cli::args::Args;
+use crate::cli::patch::*;
 use crate::func::header::*;
 use clap::Parser;
 use colored::*;
 use std::fs;
 use std::io::{self, Read, Write};
-use std::path::Path;
 #[cfg(windows)]
 pub fn pause() {
     if Args::parse().no_pause {
@@ -35,7 +34,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         return print_an_example_config();
     }
 
-    if !Path::new(&args.config).exists() {
+    if !args.config.as_ref().expect("Config path is not set").exists() {
         eprintln!("{}", "Error: Config file not found.\n ".red());
         println!("Use --example-config to generate a sample config file.");
         println!("For more details, run with --help.\n");
@@ -43,7 +42,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let config_path = fs::canonicalize(&args.config)?;
+    let config_path = fs::canonicalize(args.config.as_ref().expect("Config path is not set"))?;
     let (files, log_style, use_menu) = read_config(&config_path)?;
 
     let file_configs = if use_menu {

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+// Code for parsing command line arguments
 #[derive(Debug, clap::Parser)]
 #[command(
     name = "Hexsaly",
@@ -12,7 +14,7 @@ pub struct Args {
         help = "Path to the config file",
         default_value = "config.json"
     )]
-    pub config: String,
+    pub config: Option<PathBuf>,
 
     #[arg(
         short = 'e',
