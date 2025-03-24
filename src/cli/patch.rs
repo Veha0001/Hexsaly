@@ -52,7 +52,11 @@ pub fn insert_hex_at_offset(
     Ok(())
 }
 
-pub fn wildcard_pattern_scan(data: &[u8], pattern: &str, log_style: bool) -> Option<usize> {
+pub fn wildcard_pattern_scan(
+    data: &[u8],
+    pattern: &str,
+    log_style: bool,
+) -> Option<(usize, Vec<u8>)> {
     let pattern_bytes: Vec<Option<u8>> = pattern
         .split_whitespace()
         .map(|s| {
@@ -73,7 +77,8 @@ pub fn wildcard_pattern_scan(data: &[u8], pattern: &str, log_style: bool) -> Opt
             }
         }
         log_pattern_found(pattern, log_style);
-        return Some(i);
+        // Return both offset and matched bytes
+        return Some((i, data[i..i + pattern_bytes.len()].to_vec()));
     }
     None
 }
@@ -110,6 +115,7 @@ pub fn apply_patch(
     data: &mut Vec<u8>,
     offset: usize,
     patch: &Value,
+    wildcard_bytes: Option<&[u8]>,
     log_style: bool,
 ) -> Result<(), String> {
     if offset >= data.len() {
@@ -121,12 +127,35 @@ pub fn apply_patch(
         .to_string());
     }
 
+    let process_hex = |hex: &str, matched: Option<&[u8]>| -> Result<String, String> {
+        if let (Some(pos), Some(matched)) = (patch.get("position").and_then(|p| p.as_u64()), matched) {
+            let pos = pos as usize;
+            if pos > matched.len() {
+                return Err("Position exceeds wildcard pattern length".into());
+            }
+
+            // Take bytes from wildcard up to position
+            let matched_hex: String = matched[..pos]
+                .iter()
+                .map(|b| format!("{:02X}", b))
+                .collect::<Vec<_>>()
+                .join(" ");
+
+            // Combine with hex_replace/insert values
+            Ok(format!("{} {}", matched_hex, hex))
+        } else {
+            Ok(hex.to_string())
+        }
+    };
+
     if let Some(hex_replace) = patch.get("hex_replace") {
-        replace_hex_at_offset(data, offset, hex_replace.as_str().unwrap(), log_style)?;
-        log_patch_action("Replaced", hex_replace.as_str().unwrap(), log_style);
+        let processed_hex = process_hex(hex_replace.as_str().unwrap(), wildcard_bytes)?;
+        replace_hex_at_offset(data, offset, &processed_hex, log_style)?;
+        log_patch_action("Replaced", &processed_hex, log_style);
     } else if let Some(hex_insert) = patch.get("hex_insert") {
-        insert_hex_at_offset(data, offset, hex_insert.as_str().unwrap(), log_style)?;
-        log_patch_action("Inserted", hex_insert.as_str().unwrap(), log_style);
+        let processed_hex = process_hex(hex_insert.as_str().unwrap(), wildcard_bytes)?;
+        insert_hex_at_offset(data, offset, &processed_hex, log_style)?;
+        log_patch_action("Inserted", &processed_hex, log_style);
     } else {
         return Err("Patch must contain either 'hex_replace' or 'hex_insert'.".into());
     }
@@ -211,10 +240,13 @@ pub fn patch_code(
                 }
             }
         } else if let Some(wildcard) = patch.get("wildcard") {
-            if let Some(offset) =
+            if let Some((offset, matched_bytes)) = 
                 wildcard_pattern_scan(&data, wildcard.as_str().unwrap(), log_style)
             {
-                offset
+                if let Err(e) = apply_patch(&mut data, offset, patch, Some(&matched_bytes), log_style) {
+                    log_patch_error("Applying patch", &e, log_style);
+                }
+                continue;
             } else {
                 log_patch_skip(
                     wildcard.as_str().unwrap(),
@@ -232,8 +264,8 @@ pub fn patch_code(
             continue;
         };
 
-        // Apply the patch at the calculated offset
-        if let Err(e) = apply_patch(&mut data, offset, patch, log_style) {
+        // Apply the patch at the calculated offset (for non-wildcard cases)
+        if let Err(e) = apply_patch(&mut data, offset, patch, None, log_style) {
             log_patch_error("Applying patch", &e, log_style);
         }
     }
