@@ -1,7 +1,9 @@
 # Hexsaly
+
 Hexsaly is a tool designed to apply patches to binary files. It supports various methods for locating the patch offsets, including direct offsets, method names, and wildcard patterns.
 
 ## Features
+
 - Apply patches to binary files using hex codes.
 - Locate patch offsets using method names from a dump file.
 - Support for wildcard pattern scanning.
@@ -10,7 +12,9 @@ Hexsaly is a tool designed to apply patches to binary files. It supports various
 - Option to require files for patching or continue if not found.
 
 ## Usage
+
 **Configuration File**: Create a `config.json` file with the following structure:
+
 ```json
 {
     "Hexsaly": {
@@ -42,8 +46,11 @@ Hexsaly is a tool designed to apply patches to binary files. It supports various
     }
 }
 ```
+
 ## Building
+
 To build the project, use the following command:
+
 ```sh
 cargo build --release
 ```
