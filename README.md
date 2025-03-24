@@ -47,10 +47,25 @@ Hexsaly is a tool designed to apply patches to binary files. It supports various
 }
 ```
 
-## Building
+## Building & Install
 
 To build the project, use the following command:
 
 ```sh
 cargo build --release
+```
+
+To install the project, use the following command:
+
+```sh
+cargo install --git https://github.com/Veha0001/Hexsaly
+```
+
+## Usage
+
+Create a `config.json` file then open/run the `hexsaly.exe`.
+For get help of the command:
+
+```sh
+hexsaly -h
 ```

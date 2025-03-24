@@ -128,7 +128,9 @@ pub fn apply_patch(
     }
 
     let process_hex = |hex: &str, matched: Option<&[u8]>| -> Result<String, String> {
-        if let (Some(pos), Some(matched)) = (patch.get("position").and_then(|p| p.as_u64()), matched) {
+        if let (Some(pos), Some(matched)) =
+            (patch.get("position").and_then(|p| p.as_u64()), matched)
+        {
             let pos = pos as usize;
             if pos > matched.len() {
                 return Err("Position exceeds wildcard pattern length".into());
@@ -240,10 +242,12 @@ pub fn patch_code(
                 }
             }
         } else if let Some(wildcard) = patch.get("wildcard") {
-            if let Some((offset, matched_bytes)) = 
+            if let Some((offset, matched_bytes)) =
                 wildcard_pattern_scan(&data, wildcard.as_str().unwrap(), log_style)
             {
-                if let Err(e) = apply_patch(&mut data, offset, patch, Some(&matched_bytes), log_style) {
+                if let Err(e) =
+                    apply_patch(&mut data, offset, patch, Some(&matched_bytes), log_style)
+                {
                     log_patch_error("Applying patch", &e, log_style);
                 }
                 continue;
