@@ -16,6 +16,9 @@ pub struct Args {
     )]
     pub config: Option<PathBuf>,
 
+    #[arg(short = 'i', long, help = "Select an index of file to patch")]
+    pub inf: Option<usize>,
+
     #[arg(
         short = 'e',
         long = "example-config",

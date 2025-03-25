@@ -4,6 +4,7 @@ use crate::func::header::*;
 use clap::Parser;
 use colored::*;
 use std::fs;
+
 #[cfg(windows)]
 pub fn pause() {
     if Args::parse().no_pause {
@@ -21,9 +22,9 @@ pub fn pause() {
     // Read a single byte and discard
     let _ = stdin.read(&mut [0u8]).unwrap();
 }
+
 #[cfg(not(windows))]
 pub fn pause() {
-
     // No-op on non-Windows platforms
 }
 
@@ -31,7 +32,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     if args.example_config {
-        return print_an_example_config();
+        return write_example_config();
     }
 
     if !args
@@ -50,8 +51,10 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let config_path = fs::canonicalize(args.config.as_ref().expect("Config path is not set"))?;
     let (files, log_style, use_menu) = read_config(&config_path)?;
 
-    let file_configs = if use_menu {
-        let selected_index = display_menu(&files)?;
+    let file_configs = if let Some(index) = args.inf {
+        vec![files.get(index).ok_or("Invalid index")?.clone()]
+    } else if use_menu {
+        let selected_index = display_menu(&files, None)?;
         vec![files[selected_index].clone()]
     } else {
         files

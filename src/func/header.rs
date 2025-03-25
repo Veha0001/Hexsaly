@@ -1,10 +1,10 @@
 use colored::*;
-use inquire::Select;
+use inquire::{Confirm, Select};
 use serde_json::{self, Value};
-use std::fs::{self, File};
-use std::io::{self, BufReader};
+use std::fs::{self, File, OpenOptions};
+use std::io::{self, BufReader, Write};
 use std::path::Path;
-pub fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
+pub fn display_menu(files: &[Value], default_index: Option<usize>) -> Result<usize, io::Error> {
     let options: Vec<String> = files
         .iter()
         .map(|file_config| {
@@ -14,10 +14,13 @@ pub fn display_menu(files: &[Value]) -> Result<usize, io::Error> {
         })
         .collect();
 
-    match Select::new("Select a file to patch:", options)
-        .with_vim_mode(true)
-        .raw_prompt()
-    {
+    let mut select = Select::new("Select a file to patch:", options).with_vim_mode(true);
+
+    if let Some(index) = default_index {
+        select = select.with_starting_cursor(index);
+    }
+
+    match select.raw_prompt() {
         Ok(selection) => Ok(selection.index),
         Err(_) => {
             println!("{}", "Operation cancelled by user.".yellow());
@@ -61,38 +64,65 @@ pub fn read_config(
     Ok((files, log_style, use_menu))
 }
 
-pub fn print_an_example_config() -> Result<(), Box<dyn std::error::Error>> {
+pub fn write_example_config() -> Result<(), Box<dyn std::error::Error>> {
     let example_config = r#"{
-  "Hexsaly": {
-      "style": true,
-      "menu": false,
-      "files": [
-          {
-              "title": "Example File",
-              "input": "example.bin",
-              "output": "example_patched.bin",
-              "patches": [
-                  {
-                      "method_name": "ExampleMethodNameFromIl2cpp_dump.cs",
-                      "hex_insert": "90 90 90 90 90"
-                  },
-                  {
-                      "wildcard": "90 ?? 90 90",
-                      "hex_replace": "90 90 90 90"
-                  },
-                  {
-                      "offset": "0x1234",
-                      "hex_insert": "90 90 90 90"
-                  }
-              ],
-              "dump_cs": "dump.cs",
-              "require": false
-          }
-      ]
-  }
+    "Hexsaly": {
+        "style": true,
+        "menu": false,
+        "files": [
+            {
+                "title": "Example File",
+                "input": "example.bin",
+                "output": "example_patched.bin",
+                "patches": [
+                    {
+                        "method_name": "ExampleMethodNameFromIl2cpp_dump.cs",
+                        "hex_insert": "90 90 90 90 90"
+                    },
+                    {
+                        "wildcard": "90 ?? 90 90",
+                        "hex_replace": "90 90 90 90"
+                    },
+                    {
+                        "offset": "0x1234",
+                        "hex_insert": "90 90 90 90"
+                    }
+                ],
+                "dump_cs": "dump.cs",
+                "require": false
+            }
+        ]
+    }
 }"#;
 
+    // Print the example config in green color
     println!("{}", example_config.green());
+
+    // Ask the user if they want to save the example config to a file named 'example_config.json'
+    let ask_to_save = Confirm::new(
+        "Do you want to save this example config to a file named 'example_config.json'?",
+    )
+    .with_default(false)
+    .prompt()?;
+
+    // If the user confirms, create the file and write the example config to it
+    if ask_to_save {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .truncate(false)
+            .open("example_config.json")?;
+        file.write_all(example_config.as_bytes())?;
+        println!(
+            "{}",
+            "Example config saved as 'example_config.json'.".cyan()
+        );
+        println!(
+            "{}",
+            "Please rename 'example_config.json' to 'config.json' for Hexsaly to use it.".cyan()
+        );
+    }
+
     Ok(())
 }
 
