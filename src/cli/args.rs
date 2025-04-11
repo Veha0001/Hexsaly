@@ -1,6 +1,7 @@
+use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-// Code for parsing command line arguments
-#[derive(Debug, clap::Parser)]
+
+#[derive(Debug, Parser)]
 #[command(
     name = "Hexsaly",
     about = "A tool to patch binary files based on a configuration file.\nMade by Veha0001.",
@@ -8,6 +9,9 @@ use std::path::PathBuf;
     author
 )]
 pub struct Args {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+
     #[arg(
         short,
         long,
@@ -30,4 +34,19 @@ pub struct Args {
     #[cfg(windows)]
     #[arg(short = 'k', long, help = "No Pause")]
     pub no_pause: bool,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum Commands {
+    /// Extract card from binary file
+    Card {
+        #[arg(help = "Path to the input binary file")]
+        input: PathBuf,
+
+        #[arg(help = "Offset in the binary file (hex with 0x or decimal)")]
+        offset: String,
+
+        #[arg(help = "Number of bytes to read", default_value = "128")]
+        length: usize,
+    },
 }
