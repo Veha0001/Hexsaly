@@ -39,7 +39,7 @@ pub struct Args {
 #[derive(Debug, Subcommand)]
 pub enum Commands {
     /// Extract card from binary file
-    Card {
+    Getcard {
         #[arg(help = "Path to the input binary file")]
         input: PathBuf,
 

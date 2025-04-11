@@ -1,9 +1,10 @@
-use crate::cli::args::Args;
+use crate::cli::args::{Args, Commands};
 use crate::cli::patch::*;
 use crate::func::header::*;
 use clap::Parser;
 use colored::*;
 use std::fs;
+
 
 #[cfg(windows)]
 pub fn pause() {
@@ -30,6 +31,15 @@ pub fn pause() {
 
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+
+    // Handle getcard subcommand
+    if let Some(Commands::Getcard { input, offset, length }) = args.command {
+        return get_card(
+            input.to_str().ok_or("Invalid input path")?,
+            &offset,
+            length
+        );
+    }
 
     if args.example_config {
         return write_example_config();
