@@ -71,12 +71,15 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     for file_config in file_configs {
-        let input = file_config["input"]
-            .as_str()
-            .ok_or("Missing input in config")?;
-        let output = file_config["output"]
-            .as_str()
-            .ok_or("Missing output in config")?;
+        let (input, output) = if let Some((custom_input, custom_output)) = &args.binary {
+            (custom_input.as_str(), custom_output.as_str())
+        } else {
+            (
+                file_config["input"].as_str().ok_or("Missing input in config")?,
+                file_config["output"].as_str().ok_or("Missing output in config")?,
+            )
+        };
+        
         let patch_list = &file_config["patches"];
         let dump_cs = file_config["dump_cs"].as_str();
         let require = file_config["require"].as_bool().unwrap_or(false);

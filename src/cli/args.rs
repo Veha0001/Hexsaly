@@ -24,6 +24,15 @@ pub struct Args {
     pub inf: Option<usize>,
 
     #[arg(
+        short = 'b',
+        long = "binary",
+        help = "Custom input and output paths (format: \"input;output\")",
+        value_parser = parse_binary_paths,
+        requires = "inf"
+    )]
+    pub binary: Option<(String, String)>,
+
+    #[arg(
         short = 'e',
         long = "example-config",
         help = "Print an example config file",
@@ -34,6 +43,23 @@ pub struct Args {
     #[cfg(windows)]
     #[arg(short = 'k', long, help = "No Pause")]
     pub no_pause: bool,
+}
+
+// Add this function to parse the binary paths
+fn parse_binary_paths(arg: &str) -> Result<(String, String), String> {
+    let paths: Vec<&str> = arg.split(';').collect();
+    if paths.len() != 2 {
+        return Err(String::from("Binary paths must be in format: \"input;output\""));
+    }
+    
+    let input = paths[0].trim();
+    let output = paths[1].trim();
+    
+    if input.is_empty() || output.is_empty() {
+        return Err(String::from("Input and output paths cannot be empty"));
+    }
+    
+    Ok((input.to_string(), output.to_string()))
 }
 
 #[derive(Debug, Subcommand)]

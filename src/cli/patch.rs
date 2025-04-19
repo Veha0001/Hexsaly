@@ -348,7 +348,7 @@ pub fn get_card(
     // Print wildcard pattern
     //
     // Nope bro, just find it yourself
-    // just look at hex match super opcode function like mov,..??
+    // just look at hex match super opcode function like mov,..idk!
     // for other hex that can change in update, replace with '??'.
     //
 

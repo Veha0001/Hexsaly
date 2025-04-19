@@ -1,6 +1,6 @@
 [package]
 name = "hexsaly"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Veha0001"]
 edition = "2021"
 publish = false
@@ -9,7 +9,7 @@ publish = false
 [package.metadata.bundle]
 name = "hexsaly"
 identifier = "githubcom.Veha0001.hexsaly"
-version = "0.2.0"
+version = "0.2.1"
 copyright = "Copyright © 2025"
 category = "Program"
 osx_minimum_system_version = "10.12"
