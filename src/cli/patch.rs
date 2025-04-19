@@ -294,7 +294,11 @@ pub fn patch_code(
 }
 
 // This Function is incomplete and needs to be implemented
-pub fn get_card(input: &str, offset_str: &str, length: usize) -> Result<(), Box<dyn std::error::Error>> {
+pub fn get_card(
+    input: &str,
+    offset_str: &str,
+    length: usize,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Convert offset string (hex or decimal) to usize
     let offset = if offset_str.to_lowercase().starts_with("0x") {
         usize::from_str_radix(&offset_str[2..], 16)?
@@ -316,8 +320,13 @@ pub fn get_card(input: &str, offset_str: &str, length: usize) -> Result<(), Box<
     let card_data = &buffer[offset..end];
 
     // Print the card data in different formats
-    println!("\n{}", format!("Card data at offset 0x{:X}:", offset).yellow());
-    
+    println!(
+        "\n{}",
+        format!("Card data at offset 0x{:X}:", offset).yellow()
+    );
+
+    // I am sure somethings off of this function :)
+    //
     // Print hex values
     print!("{} ", "HEX:".yellow());
     for byte in card_data.iter() {
@@ -337,16 +346,11 @@ pub fn get_card(input: &str, offset_str: &str, length: usize) -> Result<(), Box<
     println!();
 
     // Print wildcard pattern
-    print!("{} ", "WILDCARD:".yellow());
-    for &byte in card_data {
-        if byte.is_ascii() && !byte.is_ascii_control() {
-            print!("{}", "?? ".bright_magenta());
-            
-        } else {
-            print!("{}", format!("{:02X} ", byte).cyan());
-        }
-    }
-    println!("\n");
+    //
+    // Nope bro, just find it yourself
+    // just look at hex match super opcode function like mov,..??
+    // for other hex that can change in update, replace with '??'.
+    //
 
     Ok(())
 }
