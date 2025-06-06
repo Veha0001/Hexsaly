@@ -75,11 +75,8 @@ pub fn log_patch_error(item: &str, error: &str, log_style: bool) {
 
 pub fn log_patch_done(output: &str, log_style: bool) {
     if log_style {
-        println!(
-            "{}",
-            format!("[DONE] Patched file saved as: '{}'.", output).green()
-        );
+        println!("{}", format!("[DONE] File Save as: {}", output).green());
     } else {
-        println!("{}", format!("Patched to: '{}'.", output).green());
+        println!("{}", format!("File Save as: {}", output).green());
     }
 }
