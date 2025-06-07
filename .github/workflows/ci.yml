@@ -1,4 +1,4 @@
-name: CI
+name: CI Builds
 
 on: [push, pull_request]
 
@@ -14,15 +14,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Cargo Caches
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo
-            ~/.rustup
-            target
-          key: cargo-${{ matrix.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Rust
         shell: bash
@@ -47,41 +38,3 @@ jobs:
           name: Hexsaly-${{ matrix.os == 'ubuntu-latest' && 'Linux' || 'Windows' }}
           path: target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
           if-no-files-found: error
-
-  Release-Nightly:
-    runs-on: ubuntu-latest
-    needs: Build
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: Hexsaly-Linux
-          path: ./target/release
-
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: Hexsaly-Windows
-          path: ./target/release
-
-      - name: Nightly Release
-        if: ${{ github.event_name == 'push' }}
-        uses: softprops/action-gh-release@v2.2.1
-        with:
-          name: Hexsaly
-          tag_name: latest-nightly
-          files: |
-            ./target/release/hexsaly.bin
-            ./target/release/hexsaly.exe
-          body: |
-            # Nightly version
-            **Full Changelog**: [View commit](https://github.com/Veha0001/Hexsaly/commits/main)
-            - Please use this program safely.
-            
-            ## Builds
-            [![Runner](https://img.shields.io/badge/Build-Action-block?style=for-the-badge&logo=rust&logoColor=%23fe640b&labelColor=%2324273a&color=%2340a02b)](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            - **hexsaly.bin**: Linux x86_64.
-            - **hexsaly.exe**: Windows x86_64.

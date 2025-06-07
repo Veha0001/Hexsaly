@@ -2,6 +2,8 @@
 
 Hexsaly is a tool designed to apply patches to binary files. It supports various methods for locating the patch offsets, including direct offsets, method names, and wildcard patterns.
 
+[![Static Badge](https://img.shields.io/badge/build-Nightly-brightgreen?style=for-the-badge&logo=rust&logoColor=%23ff9e64&labelColor=%23292e42&color=%233b4261)](https://nightly.link/Veha0001/Hexsaly/workflows/ci/main?preview)
+
 ## Features
 
 - Apply patches to binary files using hex codes.
@@ -61,9 +63,9 @@ To install the project, use the following command:
 cargo install --git https://github.com/Veha0001/Hexsaly
 ```
 
-## Usage
+### Usages
 
-Create a `config.json` file then open/run the `hexsaly.exe`.
+Create a `config.json` file then open/run the `hexsaly`.
 For get help of the command:
 
 ```sh

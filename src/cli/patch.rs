@@ -293,7 +293,7 @@ pub fn patch_code(
     Ok(())
 }
 
-// This Function is incomplete and needs to be implemented
+
 pub fn get_card(
     input: &str,
     offset_str: &str,
@@ -344,13 +344,5 @@ pub fn get_card(
         }
     }
     println!();
-
-    // Print wildcard pattern
-    //
-    // Nope bro, just find it yourself
-    // just look at hex match super opcode function like mov,..idk!
-    // for other hex that can change in update, replace with '??'.
-    //
-
     Ok(())
 }
