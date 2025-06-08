@@ -40,7 +40,7 @@ pub enum Commands {
         #[arg(help = "Path to the input binary file")]
         input: PathBuf,
 
-        #[arg(short = 'i', long, help= "Select an index of file to patch")]
+        #[arg(short = 'i', long, help = "Select an index of file to patch")]
         index: Option<usize>,
     },
 }

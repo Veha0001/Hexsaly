@@ -53,16 +53,24 @@ pub fn log_patch_skip(item: &str, reason: &str, log_style: bool) {
     if log_style {
         println!(
             "{}",
-            format!("[WARN] {}\nPatch failed: {}", reason.bright_yellow(), item.blue())
-                .bright_red()
-                .bold()
+            format!(
+                "[WARN] {}\nPatch failed: {}",
+                reason.bright_yellow(),
+                item.blue()
+            )
+            .bright_red()
+            .bold()
         );
     } else {
         println!(
             "{}",
-            format!("Warning: {}\nPatch failed: {}", reason.bright_yellow(), item.blue())
-                .bright_red()
-                .bold()
+            format!(
+                "Warning: {}\nPatch failed: {}",
+                reason.bright_yellow(),
+                item.blue()
+            )
+            .bright_red()
+            .bold()
         );
     }
 }
