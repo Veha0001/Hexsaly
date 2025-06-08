@@ -30,17 +30,6 @@ pub fn pause() {
 
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-
-    // Handle getcard subcommand
-    if let Some(Commands::Getcard {
-        input,
-        offset,
-        length,
-    }) = args.command
-    {
-        return get_card(input.to_str().ok_or("Invalid input path")?, &offset, length);
-    }
-
     if args.example_config {
         return write_example_config();
     }
@@ -61,8 +50,19 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let config_path = fs::canonicalize(args.config.as_ref().expect("Config path is not set"))?;
     let (files, log_style, use_menu) = read_config(&config_path)?;
 
-    let file_configs = if let Some(index) = args.inf {
-        vec![files.get(index).ok_or("Invalid index")?.clone()]
+    let file_configs = if let Some(Commands::Open { ref input, index }) = args.command {
+        let input_str = input.to_str().ok_or("Invalid input path")?;
+        
+        if let Some(idx) = index {
+            let mut config = files.get(idx).ok_or("Invalid index")?.clone();
+            config["output"] = input_str.into();
+            vec![config]
+        } else {
+            let selected_index = display_menu(&files, None)?;
+            let mut config = files[selected_index].clone();
+            config["output"] = input_str.into();
+            vec![config]
+        }
     } else if use_menu {
         let selected_index = display_menu(&files, None)?;
         vec![files[selected_index].clone()]
@@ -71,13 +71,11 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     for file_config in file_configs {
-        let (input, output) = if let Some((custom_input, custom_output)) = &args.binary {
-            (custom_input.as_str(), custom_output.as_str())
+        let input = file_config["input"].as_str().ok_or("Missing input in config")?;
+        let output = if let Some(Commands::Open { input, .. }) = &args.command {
+            input.to_str().ok_or("Invalid input path")?
         } else {
-            (
-                file_config["input"].as_str().ok_or("Missing input in config")?,
-                file_config["output"].as_str().ok_or("Missing output in config")?,
-            )
+            file_config["output"].as_str().unwrap_or(input)
         };
         
         let patch_list = &file_config["patches"];

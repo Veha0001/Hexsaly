@@ -34,7 +34,7 @@ pub fn log_no_offset_found(method_name: &str, log_style: bool) {
     if log_style {
         println!(
             "{}",
-            format!("[WARNING] No offset found for {}.", method_name.yellow()).bold()
+            format!("[WARN] No offset found for {}.", method_name.yellow()).bold()
         );
     } else {
         println!(
@@ -53,14 +53,16 @@ pub fn log_patch_skip(item: &str, reason: &str, log_style: bool) {
     if log_style {
         println!(
             "{}",
-            format!("[WARNING] {}. Skipping patch: {}", reason, item)
-                .yellow()
-                .red()
+            format!("[WARN] {}\nPatch failed: {}", reason.bright_yellow(), item.blue())
+                .bright_red()
+                .bold()
         );
     } else {
         println!(
             "{}",
-            format!("Warning: {}. Skipping patch: {}", reason, item).yellow()
+            format!("Warning: {}\nPatch failed: {}", reason.bright_yellow(), item.blue())
+                .bright_red()
+                .bold()
         );
     }
 }

@@ -254,7 +254,7 @@ pub fn patch_code(
             } else {
                 log_patch_skip(
                     wildcard.as_str().unwrap(),
-                    "Wildcard pattern not found",
+                    "No match found for wildcard.",
                     log_style,
                 );
                 continue;
@@ -290,59 +290,5 @@ pub fn patch_code(
     output_file.write_all(&data)?;
 
     log_patch_done(output, log_style);
-    Ok(())
-}
-
-
-pub fn get_card(
-    input: &str,
-    offset_str: &str,
-    length: usize,
-) -> Result<(), Box<dyn std::error::Error>> {
-    // Convert offset string (hex or decimal) to usize
-    let offset = if offset_str.to_lowercase().starts_with("0x") {
-        usize::from_str_radix(&offset_str[2..], 16)?
-    } else {
-        offset_str.parse::<usize>()?
-    };
-
-    // Read the file
-    let mut file = File::open(input)?;
-    let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer)?;
-
-    // Validate offset and length
-    if offset >= buffer.len() {
-        return Err(format!("Offset 0x{:X} is beyond file size", offset).into());
-    }
-
-    let end = std::cmp::min(offset + length, buffer.len());
-    let card_data = &buffer[offset..end];
-
-    // Print the card data in different formats
-    println!(
-        "\n{}",
-        format!("Card data at offset 0x{:X}:", offset).yellow()
-    );
-
-    // I am sure somethings off of this function :)
-    //
-    // Print hex values
-    print!("{} ", "HEX:".yellow());
-    for byte in card_data.iter() {
-        print!("{}", format!("{:02X} ", byte).cyan());
-    }
-    println!();
-
-    // Print ASCII representation
-    print!("{} ", "ASCII:".yellow());
-    for &byte in card_data {
-        if byte.is_ascii() && !byte.is_ascii_control() {
-            print!("{}", (byte as char).to_string().green());
-        } else {
-            print!("{}", ".".red());
-        }
-    }
-    println!();
     Ok(())
 }

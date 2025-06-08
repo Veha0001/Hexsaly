@@ -20,18 +20,6 @@ pub struct Args {
     )]
     pub config: Option<PathBuf>,
 
-    #[arg(short = 'i', long, help = "Select an index of file to patch")]
-    pub inf: Option<usize>,
-
-    #[arg(
-        short = 'b',
-        long = "binary",
-        help = "Custom input and output paths (format: \"input;output\")",
-        value_parser = parse_binary_paths,
-        requires = "inf"
-    )]
-    pub binary: Option<(String, String)>,
-
     #[arg(
         short = 'e',
         long = "example-config",
@@ -45,34 +33,14 @@ pub struct Args {
     pub no_pause: bool,
 }
 
-// Add this function to parse the binary paths
-fn parse_binary_paths(arg: &str) -> Result<(String, String), String> {
-    let paths: Vec<&str> = arg.split(';').collect();
-    if paths.len() != 2 {
-        return Err(String::from("Binary paths must be in format: \"input;output\""));
-    }
-    
-    let input = paths[0].trim();
-    let output = paths[1].trim();
-    
-    if input.is_empty() || output.is_empty() {
-        return Err(String::from("Input and output paths cannot be empty"));
-    }
-    
-    Ok((input.to_string(), output.to_string()))
-}
-
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    /// Extract card from binary file
-    Getcard {
+    /// Open a binary file for patching
+    Open {
         #[arg(help = "Path to the input binary file")]
         input: PathBuf,
 
-        #[arg(help = "Offset in the binary file (hex with 0x or decimal)")]
-        offset: String,
-
-        #[arg(help = "Number of bytes to read", default_value = "128")]
-        length: usize,
+        #[arg(short = 'i', long, help= "Select an index of file to patch")]
+        index: Option<usize>,
     },
 }
