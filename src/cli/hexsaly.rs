@@ -75,7 +75,9 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     for file_config in file_configs {
         let input = file_config["input"]
             .as_str()
-            .ok_or("Missing input in config")?;
+            .or_else(|| file_config["open"].as_str())
+            .ok_or("Missing input or open in config")?;
+
         let output = if let Some(Commands::Open { input, .. }) = &args.command {
             input.to_str().ok_or("Invalid input path")?
         } else {
