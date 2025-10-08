@@ -1,6 +1,6 @@
 # Hexsaly
 
-Hexsaly applies binary patches defined in config files.
+**Hex** easy program, Binary Patcher.
 
 [![Static Badge](https://img.shields.io/badge/build-Nightly-brightgreen?style=for-the-badge&logo=rust&logoColor=%23ff9e64&labelColor=%23292e42&color=%233b4261)](https://nightly.link/Veha0001/Hexsaly/workflows/ci/main?preview)
 

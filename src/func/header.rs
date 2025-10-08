@@ -23,6 +23,7 @@ pub fn display_menu(files: &[Value], default_index: Option<usize>) -> Result<usi
     match select.raw_prompt() {
         Ok(selection) => Ok(selection.index),
         Err(_) => {
+            println!();
             println!("{}", "Operation cancelled by user.".yellow());
             std::process::exit(0);
         }
