@@ -1,6 +1,6 @@
 # Hexsaly
 
-Hexsaly is a tool designed to apply patches to binary files. It supports various methods for locating the patch offsets, including direct offsets, method names, and wildcard patterns.
+Hexsaly applies binary patches defined in config files.
 
 [![Static Badge](https://img.shields.io/badge/build-Nightly-brightgreen?style=for-the-badge&logo=rust&logoColor=%23ff9e64&labelColor=%23292e42&color=%233b4261)](https://nightly.link/Veha0001/Hexsaly/workflows/ci/main?preview)
 
@@ -19,33 +19,33 @@ Hexsaly is a tool designed to apply patches to binary files. It supports various
 
 ```json
 {
-    "Hexsaly": {
-        "menu": false,
-        "style": true,
-        "files": [
-            {
-                "title": "Example",
-                "dump_cs": "path/to/dump.cs",
-                "input": "path/to/input/file",
-                "output": "path/to/output/file",
-                "require": false,
-                "patches": [
-                    {
-                        "method_name": "methodName",
-                        "hex_replace": "B8 85 47 DE 63 C3"
-                    },
-                    {
-                        "offset": "0x1234",
-                        "hex_replace": "B8 85 47 DE 63 C3"
-                    },
-                    {
-                        "wildcard": "?? ?? ??",
-                        "hex_insert": "hex values"
-                    }
-                ]
-            }
+  "Hexsaly": {
+    "menu": false,
+    "style": true,
+    "files": [
+      {
+        "title": "Example",
+        "dump_cs": "path/to/dump.cs",
+        "input": "path/to/input/file",
+        "output": "path/to/output/file",
+        "require": false,
+        "patches": [
+          {
+            "method_name": "methodName",
+            "hex_replace": "B8 85 47 DE 63 C3"
+          },
+          {
+            "offset": "0x1234",
+            "hex_replace": "B8 85 47 DE 63 C3"
+          },
+          {
+            "wildcard": "?? ?? ??",
+            "hex_insert": "hex values"
+          }
         ]
-    }
+      }
+    ]
+  }
 }
 ```
 

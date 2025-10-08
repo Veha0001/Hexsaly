@@ -2,12 +2,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
-#[command(
-    name = "Hexsaly",
-    about = "A tool to patch binary files based on a configuration file.\nMade by Veha0001.",
-    version,
-    author
-)]
+#[command(name = "Hexsaly", about = "Binary Patcher", version, author)]
 pub struct Args {
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -37,10 +32,10 @@ pub struct Args {
 pub enum Commands {
     /// Open a binary file for patching
     Open {
-        #[arg(help = "Path to the input binary file")]
+        #[arg(help = "Input binary path")]
         input: PathBuf,
 
-        #[arg(short = 'i', long, help = "Select an index of file to patch")]
+        #[arg(short = 'i', long = "int", help = "Patch config index")]
         index: Option<usize>,
     },
 }
