@@ -1,9 +1,6 @@
 name: CI Builds
 
-on:
-  push:
-  pull_request:
-  release:
+on: push
 
 permissions:
   contents: write
@@ -30,16 +27,17 @@ jobs:
         run: |
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             cargo build --release 
+             mv target/release/hexsaly.exe Hexsaly-Windows.exe
           else
             cargo build --release 
-            mv target/release/hexsaly target/release/hexsaly.bin
+            mv target/release/hexsaly Hexsaly-Linux
           fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
           name: Hexsaly-${{ matrix.os == 'ubuntu-latest' && 'Linux' || 'Windows' }}
-          path: target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
+          path: Hexsaly-*
           if-no-files-found: error
 
       - name: Release
@@ -47,9 +45,9 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           body: |
-            # Hexsaly ${{ github.ref }}
+            # Hexsaly ${{ github.ref_name }}
 
 
             [![action](https://img.shields.io/badge/build-action-brightgreen?style=for-the-badge&logo=cargo&labelColor=%231e1e2e&color=%23a6e3a1)](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-          files: target/release/hexsaly*
+          files: Hexsaly-*
