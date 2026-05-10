@@ -36,8 +36,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: Hexsaly-${{ matrix.os == 'ubuntu-latest' && 'Linux' || 'Windows' }}
-          path: target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
+          name: Hexsaly
+          path: Hexsaly-*
           if-no-files-found: error
 
       - name: Release
