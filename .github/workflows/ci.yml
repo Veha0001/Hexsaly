@@ -1,6 +1,9 @@
 name: CI Builds
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  release:
 
 permissions:
   contents: write
@@ -13,7 +16,7 @@ jobs:
         os: [windows-latest, ubuntu-latest]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Rust
         shell: bash
@@ -31,10 +34,22 @@ jobs:
             cargo build --release 
             mv target/release/hexsaly target/release/hexsaly.bin
           fi
-          
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Hexsaly-${{ matrix.os == 'ubuntu-latest' && 'Linux' || 'Windows' }}
           path: target/release/hexsaly${{ matrix.os == 'windows-latest' && '.exe' || '.bin' }}
           if-no-files-found: error
+
+      - name: Release
+        uses: softprops/action-gh-release@v3
+        if: github.ref_type == 'tag'
+        with:
+          body: |
+            # Hexsaly ${{ github.ref }}
+
+
+            [![action](https://img.shields.io/badge/build-action-brightgreen?style=for-the-badge&logo=cargo&labelColor=%231e1e2e&color=%23a6e3a1)](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          files: target/release/hexsaly*
